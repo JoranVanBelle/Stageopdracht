@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "RawDataMeasured",
+  "namespace": "com.data",
+  "fields": [
+    {
+      "name": "SensorID",
+      "type": "string"
+    },
+    {
+      "name": "Locatie",
+      "type": "string"
+    },
+    {
+      "name": "Waarde",
+      "type": "string"
+    },
+    {
+      "name": "Eenheid",
+      "type": "string"
+    },
+    {
+      "name": "Tijdstip",
+      "type": "long"
+    }
+  ]
+}
