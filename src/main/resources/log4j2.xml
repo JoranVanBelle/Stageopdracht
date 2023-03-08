@@ -1,0 +1,15 @@
+<Configuration>
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+	  <Root level="all">
+		  <AppenderRef ref="Console" />
+  	  </Root>
+    <Logger name="org.apache.kafka" level="off" additivity="false">
+      <AppenderRef ref="Console" />
+	</Logger>
+  </Loggers>
+</Configuration>

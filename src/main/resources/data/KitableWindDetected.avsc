@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "RawDataMeasured",
+  "name": "KitableWindDetected",
   "namespace": "com.stage",
   "fields": [
     {
@@ -12,12 +12,8 @@
       "type": "string"
     },
     {
-      "name": "Waarde",
-      "type": "string"
-    },
-    {
-      "name": "Eenheid",
-      "type": "string"
+      "name": "Kitable",
+      "type": "boolean"
     },
     {
       "name": "Tijdstip",

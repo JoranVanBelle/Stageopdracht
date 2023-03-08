@@ -12,8 +12,10 @@ import org.apache.avro.Schema;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.data.RawDataMeasured;
+import com.stage.RawDataMeasured;
 
 public class RawDataMeasuredProducer {
 
@@ -24,6 +26,8 @@ public class RawDataMeasuredProducer {
 	private String waarde;
 	private String eenheid;
 	private Long tijdstip;
+
+	private static final Logger logger = LogManager.getLogger(RawDataMeasuredProducer.class);
 	
 	public RawDataMeasuredProducer(Properties props, String sensorId, String locatie, String waarde, String eenheid, Long tijdstip) {
 		this.props = props;
@@ -48,7 +52,7 @@ public class RawDataMeasuredProducer {
 			producer.send(record);
 			producer.flush();
 		} catch (SerializationException e) {
-            e.printStackTrace();
+            logger.error("❌", e);
         }
 		
 	}
@@ -78,14 +82,14 @@ public class RawDataMeasuredProducer {
 			    schema = new Schema.Parser().parse(schemaString);
 				return schema;
 			} else {
-				System.err.println("Schema is not available");
+				logger.error("❌ Schema is not available");
 			}
 			
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 			
 		}
 		

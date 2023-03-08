@@ -2,8 +2,13 @@ package com.stage.adapter.mvb;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -11,75 +16,51 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.producers.CurrentData;
-import com.stage.adapter.mvb.streams.KitableWindStream;
+import com.stage.adapter.mvb.producers.RawDataMeasuredProducer;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 
-// doc: https://docs.confluent.io/5.4.1/schema-registry/schema_registry_tutorial.html
-// ⚠️
+public class ApplicationHelper extends Thread{
 
-@SpringBootApplication
-public class Application {
 
-	private static String API = "https://api.meetnetvlaamsebanken.be";
+	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3"};
+	public static final int CREATE_EVENTS = 1000 * 30 * 01 * 1; // 1000 * 60 * 60 * 1
+	private final CurrentData currentData;
+	private final Catalog catalog;
 
-//	private static final String[] sensoren = {"A2BGHA", "WDLGHA", "RA2GHA", "OSNGHA", "NPBGHA", "SWIGHA",
-//			"MP0WC3", "MP7WC3", "NP7WC3", "MP0WVC", "MP7WVC", "NP7WVC", "A2BRHF", "RA2RHF", "OSNRHF"};
-	
-	
 	private static final Logger logger = LogManager.getLogger(Application.class);
 	
-	
-	public static void main(String[] args) {
-//		SpringApplication.run(Application.class, args);
-		
-		Configurator.initialize(null, "src/main/resources/log4j2.xml");
-		
-		CurrentData currentData = new CurrentData(API);
-		Catalog catalog = new Catalog(API);
-		KitableWindStream kitableWindStream = new KitableWindStream(getProperties());
-		
-		Thread currentDataThread = new Thread(currentData);
-		Thread catalogThread = new Thread(catalog);
-		Thread windStreamThread = new Thread(kitableWindStream);
-		
-		currentDataThread.start();
-		catalogThread.start();
-		windStreamThread.start();
-		
-		
-		while(currentData.getCurrentDataString() == null || catalog.getCatalogString() == null) {
-			if(currentData.getCurrentDataString() == null) {
-				logger.info("ℹ️ retrieving current data" );
-			}
-			if(catalog.getCatalogString() == null) {
-				logger.info("ℹ️ Retrieving catalog");
-			}
-		
-			
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				logger.error("❌ ", e);
-			}
-			
-		};
-		
-		ApplicationHelper applicationHelper = new ApplicationHelper(currentData, catalog);
-		Thread applicationHelperThread = new Thread(applicationHelper);
-		applicationHelperThread.start();
+	public ApplicationHelper(CurrentData currentData, Catalog catalog) {
+		this.currentData = currentData;
+		this.catalog = catalog;
 	}
 	
-	private static Properties getProperties() {
+	public void run() {
+		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+		scheduler.scheduleAtFixedRate(() -> {
+			logger.info("ℹ️ Collecting the current data and catalog");
+			JSONObject data = currentData.getCurrentData();
+			JSONObject cat = catalog.getCatalog();
+			
+			for(String sensor : sensoren) {
+				String[] params = getParams(cat, data, sensor);
+				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
+				rdmProd.createEvent();
+			}
+			
+			logger.info(String.format("ℹ️ Raw data saved at %s",  DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now())));
+			
+		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
+	}
+	
+private static Properties getProperties() {
 		
         final Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -152,5 +133,5 @@ public class Application {
 		
 		return new String[] {loc, value, eenheid, Long.toString(millis)};
 	}
-
+	
 }
