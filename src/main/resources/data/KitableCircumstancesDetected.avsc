@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "KitableCircumstancesDetected",
+  "namespace": "com.stage",
+  "doc": "State die zegt of je kunt kiten",
+  "fields": [
+    {
+      "name": "Kiteweer",
+      "type": "boolean"
+    }
+  ]
+}
