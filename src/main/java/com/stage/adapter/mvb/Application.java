@@ -1,5 +1,6 @@
 package com.stage.adapter.mvb;
 
+import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -23,6 +24,8 @@ import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+
 // doc: https://docs.confluent.io/5.4.1/schema-registry/schema_registry_tutorial.html
 // ⚠️
 
@@ -39,8 +42,6 @@ public class Application {
 	
 	
 	public static void main(String[] args) {
-//		SpringApplication.run(Application.class, args);
-		
 		Configurator.initialize(null, "src/main/resources/log4j2.xml");
 		
 		CurrentData currentData = new CurrentData(API);
