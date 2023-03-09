@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "KitableWaveDetected",
+  "namespace": "com.stage",
+  "fields": [
+    {
+      "name": "SensorID",
+      "type": "string"
+    },
+    {
+      "name": "Locatie",
+      "type": "string"
+    },
+    {
+      "name": "Kitable",
+      "type": "boolean"
+    },
+    {
+      "name": "Tijdstip",
+      "type": "long"
+    }
+  ]
+}
