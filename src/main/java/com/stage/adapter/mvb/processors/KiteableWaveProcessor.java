@@ -6,9 +6,9 @@ import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 
 import com.stage.KiteableCircumstancesDetected;
-import com.stage.KiteableWindDetected;
+import com.stage.KiteableWaveDetected;
 
-public class ReconcilationProcessor implements Processor<String, KiteableWindDetected, String, KiteableCircumstancesDetected> {
+public class KiteableWaveProcessor implements Processor<String, KiteableWaveDetected, String, KiteableCircumstancesDetected>{
 
 	private KeyValueStore<String, KiteableCircumstancesDetected> store;
 	private ProcessorContext<String, KiteableCircumstancesDetected> context;
@@ -22,9 +22,8 @@ public class ReconcilationProcessor implements Processor<String, KiteableWindDet
 	}
 	
 	@Override
-	public void process(Record<String, KiteableWindDetected> record) {
+	public void process(Record<String, KiteableWaveDetected> record) {
 		// TODO Auto-generated method stub
-		KiteableCircumstancesDetected storedValue = store.get(record.key());
 		
 	}
 	

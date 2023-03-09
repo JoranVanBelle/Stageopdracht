@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "KitableCircumstancesDetected",
+  "name": "KiteableCircumstancesDetected",
   "namespace": "com.stage",
   "doc": "State die zegt of je kunt kiten",
   "fields": [

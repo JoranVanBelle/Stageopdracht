@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "KitableWaveDetected",
+  "name": "KiteableWaveDetected",
   "namespace": "com.stage",
   "fields": [
     {

@@ -1,9 +1,11 @@
 package com.stage.adapter.mvb.streams;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
-
+import com.stage.KiteableCircumstancesDetected;
+import com.stage.KiteableWaveDetected;
+import com.stage.KiteableWindDetected;
+import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
+import com.stage.adapter.mvb.processors.ReconcilationProcessor;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
@@ -18,46 +20,42 @@ import org.apache.kafka.streams.state.Stores;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.stage.KitableCircumstancesDetected;
-import com.stage.KitableWaveDetected;
-import com.stage.KitableWindDetected;
-import com.stage.adapter.mvb.processors.KitableWaveProcessor;
-import com.stage.adapter.mvb.processors.ReconcilationProcessor;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
 
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
-
-public class KitableCircumstancesStream extends Thread {
+public class KiteableCircumstancesStream extends Thread {
 
 	private static final String WINDTOPIC = "Meetnet.meting.wind.kitable";
 	private static final String WAVETOPIC = "Meetnet.meting.wave.kitable";
 	private static final String KITETOPIC = "Meetnet.meting.kitable";
 	
-	private static final Logger logger = LogManager.getLogger(KitableCircumstancesStream.class);
+	private static final Logger logger = LogManager.getLogger(KiteableCircumstancesStream.class);
 	
 	@Override
 	public void run() {
 		final Map<String, String> serdeConfig = Collections.singletonMap("schema.registry.url","http://localhost:8081");
-		final SpecificAvroSerde<KitableWindDetected> kitableWindDetectedSerde = new SpecificAvroSerde<>();
+		final SpecificAvroSerde<KiteableWindDetected> kitableWindDetectedSerde = new SpecificAvroSerde<>();
 		kitableWindDetectedSerde.configure(serdeConfig, false);
-		final SpecificAvroSerde<KitableWaveDetected> kitableWaveDetectedSerde = new SpecificAvroSerde<>();
+		final SpecificAvroSerde<KiteableWaveDetected> kitableWaveDetectedSerde = new SpecificAvroSerde<>();
 		kitableWaveDetectedSerde.configure(serdeConfig, false);
-        final SpecificAvroSerde<KitableCircumstancesDetected> kitableCircumstancesDetectedSerde = new SpecificAvroSerde<>();
+        final SpecificAvroSerde<KiteableCircumstancesDetected> kitableCircumstancesDetectedSerde = new SpecificAvroSerde<>();
         kitableCircumstancesDetectedSerde.configure(serdeConfig, false);
         
         StreamsBuilder builder = new StreamsBuilder();
         
         builder.addStateStore(Stores.keyValueStoreBuilder(Stores.persistentKeyValueStore("merge_store"), Serdes.String(), kitableCircumstancesDetectedSerde));
         
-        KStream<String, KitableWindDetected> kitableWindDetectedStream = builder.stream(WINDTOPIC, Consumed.with(Serdes.String(), kitableWindDetectedSerde))
+        KStream<String, KiteableWindDetected> kitableWindDetectedStream = builder.stream(WINDTOPIC, Consumed.with(Serdes.String(), kitableWindDetectedSerde))
         		.selectKey((k,v) -> v.getSensorID())
         		.repartition(Repartitioned.with(Serdes.String(), kitableWindDetectedSerde).withName("KitableWind_byDataId"));
         
-        KStream<String, KitableWaveDetected> kitableWaveDetectedStream = builder.stream(WAVETOPIC, Consumed.with(Serdes.String(), kitableWaveDetectedSerde))
+        KStream<String, KiteableWaveDetected> kitableWaveDetectedStream = builder.stream(WAVETOPIC, Consumed.with(Serdes.String(), kitableWaveDetectedSerde))
         		.selectKey((k,v) -> v.getSensorID())
         		.repartition(Repartitioned.with(Serdes.String(), kitableWaveDetectedSerde).withName("KitableWave_byDataId"));
         
         kitableWindDetectedStream.process(ReconcilationProcessor::new, "merge_store")
-        	.merge(kitableWaveDetectedStream.process(KitableWaveProcessor::new, "merge_store"))
+        	.merge(kitableWaveDetectedStream.process(KiteableWaveProcessor::new, "merge_store"))
         	.to(KITETOPIC, Produced.with(Serdes.String(), kitableCircumstancesDetectedSerde));
         
 		KafkaStreams streams = new KafkaStreams(builder.build(), getProperties());
