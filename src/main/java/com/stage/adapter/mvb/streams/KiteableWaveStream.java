@@ -19,26 +19,26 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.stage.KitableWaveDetected;
+import com.stage.KiteableWaveDetected;
 import com.stage.RawDataMeasured;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-public class KitableWaveStream extends Thread {
+public class KiteableWaveStream extends Thread {
 
 	private static final String INTOPIC = "Meetnet.meting.raw";
 	private static final String WAVETOPIC = "Meetnet.meting.wave.kitable";
 	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NPBGHA"}));
 	
-	private static final Logger logger = LogManager.getLogger(KitableWaveStream.class);
+	private static final Logger logger = LogManager.getLogger(KiteableWaveStream.class);
 	
 	@Override
 	public void run() {
 		final Map<String, String> serdeConfig = Collections.singletonMap("schema.registry.url","http://localhost:8081");
 		final SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde = new SpecificAvroSerde<>();
 		rawDataMeasuredSerde.configure(serdeConfig, false);
-        final SpecificAvroSerde<KitableWaveDetected> kitableWaveDetectedSerde = new SpecificAvroSerde<>();
+        final SpecificAvroSerde<KiteableWaveDetected> kitableWaveDetectedSerde = new SpecificAvroSerde<>();
         kitableWaveDetectedSerde.configure(serdeConfig, false);
         
         StreamsBuilder builder = new StreamsBuilder();
@@ -48,7 +48,7 @@ public class KitableWaveStream extends Thread {
         try {
             rawDataMeasuredStream
     	    	.filter((k,v) -> this.SENSOREN.contains(k))
-    	    	.mapValues(v -> new KitableWaveDetected(v.getSensorID(), v.getLocatie(), Float.parseFloat(v.getWaarde()) > 150 , v.getTijdstip()))
+    	    	.mapValues(v -> new KiteableWaveDetected(v.getSensorID(), v.getLocatie(), Float.parseFloat(v.getWaarde()) > 150 , v.getTijdstip()))
 //    	    	.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
     	    	.to(WAVETOPIC, Produced.with(Serdes.String(), kitableWaveDetectedSerde));
             
@@ -69,7 +69,7 @@ public class KitableWaveStream extends Thread {
 		props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 1);
 		props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);
 		props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, 2);
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, KitableWaveStream.class.toString());
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, KiteableWaveStream.class.toString());
 		
 		props.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
 		props.put(StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG), "snappy");

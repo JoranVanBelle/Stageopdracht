@@ -6,16 +6,16 @@ import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import com.stage.KitableWindDetected;
+import com.stage.KiteableWindDetected;
 import com.stage.RawDataMeasured;
 
-public class KitableWindProcessor implements Processor<String, RawDataMeasured, String, KitableWindDetected> {
+public class KiteableWindProcessor implements Processor<String, RawDataMeasured, String, KiteableWindDetected> {
 
 	private KeyValueStore<String, RawDataMeasured> stateStore;
-	private ProcessorContext<String, KitableWindDetected> context;
+	private ProcessorContext<String, KiteableWindDetected> context;
 	
 	@Override
-    public void init(ProcessorContext<String, KitableWindDetected> context) {
+    public void init(ProcessorContext<String, KiteableWindDetected> context) {
 		// TODO Auto-generated method stub
 		Processor.super.init(context);
 		
@@ -37,10 +37,10 @@ public class KitableWindProcessor implements Processor<String, RawDataMeasured, 
             return;
         } else {
         	stateStore.put(record.key(), record.value());
-            KitableWindDetected kitableWind = new KitableWindDetected(
+            KiteableWindDetected kitableWind = new KiteableWindDetected(
             		record.value().getSensorID(), 
             		record.value().getLocatie(), 
-            		Double.parseDouble(mostRecentEvent.getWaarde()) > 7.717, 
+//            		Double.parseDouble(mostRecentEvent.getWaarde()) > 7.717,
             		record.value().getTijdstip()
             );
             

@@ -18,5 +18,7 @@ public class AvroSerdes {
 		specificSerdes.configure(propMap, false);
 		return specificSerdes;
 	}
+
+
 	
 }

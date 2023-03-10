@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "KitableWindDetected",
+  "name": "KiteableWindDetected",
   "namespace": "com.stage",
   "fields": [
     {
@@ -11,10 +11,10 @@
       "name": "Locatie",
       "type": "string"
     },
-    {
-      "name": "Kitable",
-      "type": "boolean"
-    },
+//    {
+//      "name": "Kitable",
+//      "type": "boolean"
+//    },
     {
       "name": "Tijdstip",
       "type": "long"

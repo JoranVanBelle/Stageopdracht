@@ -1,7 +1,14 @@
 package com.stage.adapter.mvb;
 
-import java.util.Properties;
-
+import com.stage.adapter.mvb.helpers.ApplicationHelper;
+import com.stage.adapter.mvb.producers.Catalog;
+import com.stage.adapter.mvb.producers.CurrentData;
+import com.stage.adapter.mvb.streams.KiteableCircumstancesStream;
+import com.stage.adapter.mvb.streams.KiteableWaveStream;
+import com.stage.adapter.mvb.streams.KiteableWindStream;
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -10,23 +17,9 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import com.stage.adapter.mvb.helpers.ApplicationHelper;
-import com.stage.adapter.mvb.producers.Catalog;
-import com.stage.adapter.mvb.producers.CurrentData;
-import com.stage.adapter.mvb.streams.KitableCircumstancesStream;
-import com.stage.adapter.mvb.streams.KitableWaveStream;
-import com.stage.adapter.mvb.streams.KitableWindStream;
+import java.util.Properties;
 
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-
-// doc: https://docs.confluent.io/5.4.1/schema-registry/schema_registry_tutorial.html
-// ⚠️
-
-@SpringBootApplication
 public class Application {
 
 	private static String API = "https://api.meetnetvlaamsebanken.be";
@@ -39,15 +32,13 @@ public class Application {
 	
 	
 	public static void main(String[] args) {
-//		SpringApplication.run(Application.class, args);
-		
 		Configurator.initialize(null, "src/main/resources/log4j2.xml");
 		
 		CurrentData currentData = new CurrentData(API);
 		Catalog catalog = new Catalog(API);
-		KitableWindStream kitableWindStream = new KitableWindStream();
-		KitableWaveStream kitableWaveStream = new KitableWaveStream();
-		KitableCircumstancesStream kitableCircumstancesStream = new KitableCircumstancesStream();
+		KiteableWindStream kitableWindStream = new KiteableWindStream();
+		KiteableWaveStream kitableWaveStream = new KiteableWaveStream();
+		KiteableCircumstancesStream kitableCircumstancesStream = new KiteableCircumstancesStream();
 		
 		Thread currentDataThread = new Thread(currentData);
 		Thread catalogThread = new Thread(catalog);
