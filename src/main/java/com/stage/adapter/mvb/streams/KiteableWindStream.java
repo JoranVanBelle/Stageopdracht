@@ -1,35 +1,38 @@
 package com.stage.adapter.mvb.streams;
 
-import java.time.Duration;
-import java.util.*;
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 
-import com.stage.KiteableWindDetected;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.kstream.internals.suppress.NamedSuppressed;
-import org.apache.kafka.streams.kstream.internals.suppress.SuppressedInternal;
-import org.apache.kafka.streams.processor.StateStore;
-import org.apache.kafka.streams.processor.api.Processor;
-import org.apache.kafka.streams.processor.api.ProcessorContext;
-import org.apache.kafka.streams.processor.api.Record;
-import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.kstream.Branched;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Predicate;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.stage.KiteableWindDetected;
 import com.stage.RawDataMeasured;
+import com.stage.WindHasFallenOff;
+import com.stage.adapter.mvb.helpers.GracefulShutdown;
+import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
+import com.stage.adapter.mvb.processors.KiteableWindSpeedProcessor;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
-
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 
 // https://stackoverflow.com/questions/58745670/kafka-compare-consecutive-values-for-a-key
 
@@ -40,15 +43,20 @@ public class KiteableWindStream extends Thread {
 	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NP7WC3"}));
 
 	private static final Logger logger = LogManager.getLogger(KiteableWindStream.class);
+	
+	private static final String kvStoreName = "windStream";
+	private static final double threshold = 7.717;
 
 	@Override
 	public void run() {
 		Properties props = streamsConfig();
 
-		Topology topo = buildTopology(SENSOREN, 7.71, INTOPIC, WINDTOPIC, rawDataMeasuredSerde(props), kiteableWindDetectedSerde(props), props);
+		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WINDTOPIC, rawDataMeasuredSerde(props), kiteableWindDetectedSerde(props), windHasFallenOffSerde(props), props);
 		KafkaStreams streams = new KafkaStreams(topo, props);
 		streams.start();
 		logger.info("ℹ️ KiteableWindStream started");
+		
+		GracefulShutdown.gracefulShutdown(streams);
 
 	}
 
@@ -66,6 +74,14 @@ public class KiteableWindStream extends Thread {
 		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
 		kiteableWindDetectedSerde.configure(serdeConfig, false);
 		return kiteableWindDetectedSerde;
+	}
+	
+	public static SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde(Properties envProps) {
+		final SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde = new SpecificAvroSerde<>();
+		Map<String, String> serdeConfig = new HashMap<>();
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+		windHasFallenOffSerde.configure(serdeConfig, false);
+		return windHasFallenOffSerde;
 	}
 
 //
@@ -112,27 +128,34 @@ public class KiteableWindStream extends Thread {
 										  String rawDataTopic,
 										  String kiteableWindTopic,
 										  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
-										  SpecificAvroSerde<KiteableWindDetected> kitableWindDetectedSerde,
+										  SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde,
+										  SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde,
 										  Properties streamProperties
 	){
 		StreamsBuilder builder = new StreamsBuilder();
 
 		builder.addStateStore(
 				Stores.keyValueStoreBuilder(
-						Stores.persistentKeyValueStore("most-recent-event"),
+						Stores.persistentKeyValueStore(kvStoreName),
 						Serdes.String(),
 						rawDataMeasuredSerde)
 		);
-
 		builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
-				.filter(onlyInScopeSensors(inScopeSensors))
-				.groupByKey() // We willen detecties doen per sensor...
-				.reduce((previousValue, currentValue) -> measurementsThatCrossTheTreshhold(windspeedTreshhold, previousValue, currentValue))
-				.mapValues(KiteableWindStream::transformToKiteableWindDetected)
-//				.suppress(Suppressed.untilTimeLimit(Duration.ofSeconds(5), Suppressed.BufferConfig.unbounded()))
-				.toStream()
-				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
-				.to(kiteableWindTopic, Produced.with(Serdes.String(), kitableWindDetectedSerde));
+	        .filter(onlyInScopeSensors(inScopeSensors))
+	        .process(()-> new KiteableWaveProcessor(kvStoreName, threshold), kvStoreName)
+//			.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+	        .split()
+	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) > threshold, 
+	        		Branched.withConsumer(s -> s
+	        				.mapValues(v -> new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getTijdstip()))
+	        				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+	        				.to(kiteableWindTopic, Produced.with(Serdes.String(), kiteableWindDetectedSerde))))
+	        
+	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) <= threshold, 
+	        		Branched.withConsumer(s -> s
+	        		.mapValues(v -> new WindHasFallenOff(v.getSensorID(), v.getLocatie(), v.getTijdstip()))
+    				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+	        		.to(kiteableWindTopic, Produced.with(Serdes.String(), windHasFallenOffSerde))));
 
 		return builder.build(streamProperties);
 	}
@@ -166,8 +189,5 @@ public class KiteableWindStream extends Thread {
 	private static Predicate<String, RawDataMeasured> onlyInScopeSensors(Collection<String> inScopeSensors) {
 		return (key_maybe, v) -> Optional.ofNullable(key_maybe).map(inScopeSensors::contains).orElse(false);
 	}
-
-
-
-
+	
 }

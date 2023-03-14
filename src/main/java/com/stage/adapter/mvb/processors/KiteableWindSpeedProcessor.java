@@ -1,15 +1,16 @@
 package com.stage.adapter.mvb.processors;
 
+
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import com.stage.KiteableCircumstancesDetected;
-import com.stage.KiteableWaveDetected;
+import com.stage.KiteableWindDetected;
 import com.stage.RawDataMeasured;
+import com.stage.WindHasFallenOff;
 
-public class KiteableWaveProcessor implements Processor<String, RawDataMeasured, String, RawDataMeasured> {
+public class KiteableWindSpeedProcessor implements Processor<String, RawDataMeasured, String, RawDataMeasured> {
 
 	private KeyValueStore<String, RawDataMeasured> stateStore;
 	private ProcessorContext<String, RawDataMeasured> context;
@@ -17,13 +18,14 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
 	private String kvStoreName;
 	private double threshold;
 
-	public KiteableWaveProcessor(String kvStoreName, double threshold){
+	public KiteableWindSpeedProcessor(String kvStoreName, double threshold){
 	    this.kvStoreName = kvStoreName;
 	    this.threshold = threshold;
 	}
 	
 	@Override
-	public void init(ProcessorContext<String, RawDataMeasured> context) {
+    public void init(ProcessorContext<String, RawDataMeasured> context) {
+		// TODO Auto-generated method stub
 		Processor.super.init(context);
 		
 		this.context = context;
@@ -32,7 +34,7 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
 	
 	@Override
 	public void process(Record<String, RawDataMeasured> record) {
-		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub		
         var mostRecentEvent = stateStore.get(record.key());
         
         if(mostRecentEvent == null) {
@@ -100,28 +102,27 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
         } else {
         	return;
         }
-        
 	}
 	
     @Override
     public void close() {
-
+		// TODO Auto-generated method stub
     }
     
     private static boolean isRecordEersteRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
     	return mostRecentEvent.getTijdstip() == record.value().getTijdstip();
     }
-    
+	
 	private static boolean isValueOverThresholdAndIsLastValueOverThreshold(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record, double threshold) {
 		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
 	}
 	
 	private static boolean isValueOverThresholdAndIsLastValueLessThanThreshold(RawDataMeasured mostRecentEvent,  Record<String, RawDataMeasured> record, double threshold) {
-		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) <= threshold;
+		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) < threshold;
 	}	
 	
 	private static boolean isValueLessThanThresholdAndIsLastOverThreshold(RawDataMeasured mostRecentEvent,  Record<String, RawDataMeasured> record, double threshold) {
-		return Double.parseDouble(record.value().getWaarde()) <= threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
-	}	
+		return Double.parseDouble(record.value().getWaarde()) < threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
+	}
 
 }

@@ -12,10 +12,6 @@
       "type": "string"
     },
     {
-      "name": "Kitable",
-      "type": "boolean"
-    },
-    {
       "name": "Tijdstip",
       "type": "long"
     }
