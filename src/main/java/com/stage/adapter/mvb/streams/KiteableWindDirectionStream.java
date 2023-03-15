@@ -3,7 +3,6 @@ package com.stage.adapter.mvb.streams;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -24,38 +23,40 @@ import org.apache.kafka.streams.state.Stores;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.stage.KiteableWaveDetected;
+import com.stage.KiteableWindDirectionDetected;
 import com.stage.RawDataMeasured;
-import com.stage.UnkiteableWaveDetected;
+import com.stage.UnkiteableWindDirectionDetected;
 import com.stage.adapter.mvb.helpers.GracefulShutdown;
-import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
+import com.stage.adapter.mvb.processors.KiteableWindDirectionProcessor;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-public class KiteableWaveStream extends Thread {
-
+public class KiteableWindDirectionStream extends Thread {
+	
 	private static final String INTOPIC = "Meetnet.meting.raw";
-	private static final String WAVETOPIC = "Meetnet.meting.wave.kitable";
-	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NPBGHA"}));
+	private static final String WAVETOPIC = "Meetnet.meting.wind.direction.kitable";
+//	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NP7WVC"}));
 	
 	private static final Logger logger = LogManager.getLogger(KiteableWaveStream.class);
 	
-	private static final String kvStoreName = "waveStream";
-	private static final double threshold = 150;
+	private static final String kvStoreName = "windDirectionStream";
+	private static final Map<String, double[]> threshold  = new HashMap<>() {{
+	    put("NP7WRS", new double[] {10.00, 230.00});
+	}};
 	
 	@Override
 	public void run() {
 		
 		Properties props = streamsConfig();
 		
-		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(props), kiteableWaveDetectedSerde(props), unkiteableWaveDetectedSerde(props), props);
+		Topology topo = buildTopology(threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(props), kiteableWindDirectionDetectedSerde(props), unkiteableWindDirectionDetected(props), props);
 		KafkaStreams streams = new KafkaStreams(topo, props);
 		streams.start();
-		logger.info("ℹ️ KiteableWaveStream started");
+		logger.info("ℹ️ KiteableWindDirectionStream started");
 		
 		GracefulShutdown.gracefulShutdown(streams);
-
+		
 	}
 	
 	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(Properties envProps) {
@@ -66,23 +67,23 @@ public class KiteableWaveStream extends Thread {
 		return rawDataMeasuredSerde;
 	}
 
-	public static SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde = new SpecificAvroSerde<>();
+	public static SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde(Properties envProps) {
+		final SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
 		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		kiteableWaveDetectedSerde.configure(serdeConfig, false);
-		return kiteableWaveDetectedSerde;
+		kiteableWindDirectionDetectedSerde.configure(serdeConfig, false);
+		return kiteableWindDirectionDetectedSerde;
 	}
 	
-	public static SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetected = new SpecificAvroSerde<>();
+	public static SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected(Properties envProps) {
+		final SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
 		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		unkiteableWaveDetected.configure(serdeConfig, false);
-		return unkiteableWaveDetected;
+		unkiteableWindDirectionDetected.configure(serdeConfig, false);
+		return unkiteableWindDirectionDetected;
 	}
 	
-	private static Properties streamsConfig() {
+private static Properties streamsConfig() {
 		
 		Properties settings = new Properties();
 		// Set a few key parameters
@@ -101,45 +102,51 @@ public class KiteableWaveStream extends Thread {
 
 		return settings;
 	}
+
+protected static Topology buildTopology(Map<String, double[]> thresholds,
+								  String rawDataTopic,
+								  String kiteableWindDirectionTopic,
+								  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
+								  SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde,
+								  SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetectedSerde,
+								  Properties streamProperties
+){
 	
-	protected static Topology buildTopology(Collection<String> inScopeSensors,
-										  double windspeedTreshhold,
-										  String rawDataTopic,
-										  String kiteableWaveTopic,
-										  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
-										  SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde,
-										  SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde,
-										  Properties streamProperties
-	){
-		StreamsBuilder builder = new StreamsBuilder();
-		
-		builder.addStateStore(
-		Stores.keyValueStoreBuilder(
-		Stores.persistentKeyValueStore(kvStoreName),
-		Serdes.String(),
-		rawDataMeasuredSerde)
-		);
-			
-		builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
-			.filter(onlyInScopeSensors(inScopeSensors))
-			.process(() -> new KiteableWaveProcessor(kvStoreName, threshold), kvStoreName)
-			.split()
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > threshold,
-					Branched.withConsumer(s -> s
-							.mapValues(v -> new KiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k,v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
-							.to(kiteableWaveTopic, Produced.with(Serdes.String(), kiteableWaveDetectedSerde))))
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= threshold,
-					Branched.withConsumer(s -> s
-							.mapValues(v -> new UnkiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
-							.to(kiteableWaveTopic, Produced.with(Serdes.String(), unkiteableWaveDetectedSerde))));
-		
-			
-			return builder.build(streamProperties);
+	List<String> inScopeSensors = new ArrayList<>(thresholds.keySet());
+	
+	StreamsBuilder builder = new StreamsBuilder();
+	
+	builder.addStateStore(
+	Stores.keyValueStoreBuilder(
+	Stores.persistentKeyValueStore(kvStoreName),
+	Serdes.String(),
+	rawDataMeasuredSerde)
+	);
+	
+	builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
+	.filter(onlyInScopeSensors(inScopeSensors))
+	.process(() -> new KiteableWindDirectionProcessor(kvStoreName, thresholds), kvStoreName)
+	.split()
+	.branch((key, value) -> isValueBinnenUpperAndLowerBound(value.getWaarde(), thresholds.get(key)[1], thresholds.get(key)[0]),
+			Branched.withConsumer(s -> s
+					.mapValues(v -> new KiteableWindDirectionDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
+    				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+    				.to(kiteableWindDirectionTopic, Produced.with(Serdes.String(), kiteableWindDirectionDetectedSerde))))
+	.branch((key, value) -> !isValueBinnenUpperAndLowerBound(value.getWaarde(), thresholds.get(key)[1], thresholds.get(key)[0]),
+			Branched.withConsumer(s -> s
+					.mapValues(v -> new UnkiteableWindDirectionDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
+    				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+    				.to(kiteableWindDirectionTopic, Produced.with(Serdes.String(), unkiteableWindDirectionDetectedSerde))));
+	
+	return builder.build(streamProperties);
 	}
-	
+
 	private static Predicate<String, RawDataMeasured> onlyInScopeSensors(Collection<String> inScopeSensors) {
 		return (key_maybe, v) -> Optional.ofNullable(key_maybe).map(inScopeSensors::contains).orElse(false);
+	}
+	
+	private static boolean isValueBinnenUpperAndLowerBound(String value, double upper, double lower) {
+		double valueDouble = Double.parseDouble(value);
+		return (lower < valueDouble && valueDouble < upper);
 	}
 }

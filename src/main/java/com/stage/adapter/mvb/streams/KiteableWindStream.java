@@ -29,7 +29,6 @@ import com.stage.RawDataMeasured;
 import com.stage.WindHasFallenOff;
 import com.stage.adapter.mvb.helpers.GracefulShutdown;
 import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
-import com.stage.adapter.mvb.processors.KiteableWindSpeedProcessor;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
@@ -147,13 +146,13 @@ public class KiteableWindStream extends Thread {
 	        .split()
 	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) > threshold, 
 	        		Branched.withConsumer(s -> s
-	        				.mapValues(v -> new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getTijdstip()))
+	        				.mapValues(v -> new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
 	        				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
 	        				.to(kiteableWindTopic, Produced.with(Serdes.String(), kiteableWindDetectedSerde))))
 	        
 	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) <= threshold, 
 	        		Branched.withConsumer(s -> s
-	        		.mapValues(v -> new WindHasFallenOff(v.getSensorID(), v.getLocatie(), v.getTijdstip()))
+	        		.mapValues(v -> new WindHasFallenOff(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
     				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
 	        		.to(kiteableWindTopic, Produced.with(Serdes.String(), windHasFallenOffSerde))));
 
@@ -161,7 +160,7 @@ public class KiteableWindStream extends Thread {
 	}
 
 	private static KiteableWindDetected transformToKiteableWindDetected(RawDataMeasured v) {
-		return new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getTijdstip());
+		return new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip());
 	}
 
 	private static RawDataMeasured measurementsThatCrossTheTreshhold(double windspeedTreshhold, RawDataMeasured previousValue, RawDataMeasured currentValue) {

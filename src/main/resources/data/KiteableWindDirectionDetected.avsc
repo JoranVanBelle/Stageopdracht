@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "UnkiteableWaveDetected",
+  "name": "KiteableWindDirectionDetected",
   "namespace": "com.stage",
   "fields": [
     {

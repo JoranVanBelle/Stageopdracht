@@ -12,6 +12,14 @@
       "type": "string"
     },
     {
+      "name": "Waarde",
+      "type": "string"
+    },
+    {
+      "name": "Eenheid",
+      "type": "string"
+    },
+    {
       "name": "Tijdstip",
       "type": "long"
     }

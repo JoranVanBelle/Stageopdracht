@@ -1,14 +1,7 @@
 package com.stage.adapter.mvb;
 
-import com.stage.adapter.mvb.helpers.ApplicationHelper;
-import com.stage.adapter.mvb.producers.Catalog;
-import com.stage.adapter.mvb.producers.CurrentData;
-import com.stage.adapter.mvb.streams.KiteableCircumstancesStream;
-import com.stage.adapter.mvb.streams.KiteableWaveStream;
-import com.stage.adapter.mvb.streams.KiteableWindStream;
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import java.util.Properties;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -18,7 +11,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import java.util.Properties;
+import com.stage.adapter.mvb.helpers.ApplicationHelper;
+import com.stage.adapter.mvb.producers.Catalog;
+import com.stage.adapter.mvb.producers.CurrentData;
+import com.stage.adapter.mvb.streams.KiteableWaveStream;
+import com.stage.adapter.mvb.streams.KiteableWindStream;
+
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 
 public class Application {
 
@@ -38,13 +39,12 @@ public class Application {
 		Catalog catalog = new Catalog(API);
 		KiteableWindStream kitableWindStream = new KiteableWindStream();
 		KiteableWaveStream kitableWaveStream = new KiteableWaveStream();
-		KiteableCircumstancesStream kitableCircumstancesStream = new KiteableCircumstancesStream();
+
 		
 		Thread currentDataThread = new Thread(currentData);
 		Thread catalogThread = new Thread(catalog);
 		Thread windStreamThread = new Thread(kitableWindStream);
 		Thread waveStreamThread = new Thread(kitableWaveStream);
-		Thread kitableCircThread = new Thread(kitableCircumstancesStream);
 		
 		currentDataThread.start();
 		catalogThread.start();
@@ -73,7 +73,6 @@ public class Application {
 		applicationHelperThread.start();
 		windStreamThread.start();
 		waveStreamThread.start();
-//		kitableCircThread.start();
 	}
 	
 	private static Properties getProperties() {
