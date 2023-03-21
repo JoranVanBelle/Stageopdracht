@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "WindHasFallenOff",
+  "name": "UnkiteableWindDetected",
   "namespace": "com.stage",
   "fields": [
     {

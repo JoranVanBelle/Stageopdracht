@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.stage.KiteableWindDetected;
 import com.stage.RawDataMeasured;
-import com.stage.WindHasFallenOff;
+import com.stage.UnkiteableWindDetected;
 import com.stage.adapter.mvb.helpers.GracefulShutdown;
 import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
 
@@ -75,33 +75,13 @@ public class KiteableWindStream extends Thread {
 		return kiteableWindDetectedSerde;
 	}
 	
-	public static SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde(Properties envProps) {
-		final SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde = new SpecificAvroSerde<>();
+	public static SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde(Properties envProps) {
+		final SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
 		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
 		windHasFallenOffSerde.configure(serdeConfig, false);
 		return windHasFallenOffSerde;
 	}
-
-//
-//	private static Properties getProperties() {
-//
-//		Properties props = new Properties();
-//
-//		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-//		props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 1);
-//		props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);
-//		props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, 2);
-//		props.put(StreamsConfig.APPLICATION_ID_CONFIG, KiteableWindStream.class.toString());
-//
-//		props.put(StreamsConfig.consumerPrefix(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "earliest");
-//		props.put(StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG), "snappy");
-//		props.put(StreamsConfig.producerPrefix(ProducerConfig.RETRIES_CONFIG), 3);
-//		props.put(StreamsConfig.producerPrefix(ProducerConfig.RETRY_BACKOFF_MS_CONFIG), 500);
-//        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
-//
-//        return props;
-//	}
 
 	private static Properties streamsConfig() {
 		Properties settings = new Properties();
@@ -128,7 +108,7 @@ public class KiteableWindStream extends Thread {
 										  String kiteableWindTopic,
 										  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
 										  SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde,
-										  SpecificAvroSerde<WindHasFallenOff> windHasFallenOffSerde,
+										  SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde,
 										  Properties streamProperties
 	){
 		StreamsBuilder builder = new StreamsBuilder();
@@ -139,6 +119,7 @@ public class KiteableWindStream extends Thread {
 						Serdes.String(),
 						rawDataMeasuredSerde)
 		);
+		
 		builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
 	        .filter(onlyInScopeSensors(inScopeSensors))
 	        .process(()-> new KiteableWaveProcessor(kvStoreName, threshold), kvStoreName)
@@ -152,7 +133,7 @@ public class KiteableWindStream extends Thread {
 	        
 	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) <= threshold, 
 	        		Branched.withConsumer(s -> s
-	        		.mapValues(v -> new WindHasFallenOff(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
+	        		.mapValues(v -> new UnkiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
     				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
 	        		.to(kiteableWindTopic, Produced.with(Serdes.String(), windHasFallenOffSerde))));
 

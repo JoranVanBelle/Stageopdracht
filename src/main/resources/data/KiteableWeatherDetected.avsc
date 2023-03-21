@@ -1,0 +1,52 @@
+{
+  "type": "record",
+  "name": "KiteableWeatherDetected",
+  "namespace": "com.stage",
+  "fields": [
+    {
+      "name": "DataID",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "Locatie",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "Windsnelheid",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "EenheidWindsnelheid",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "Golfhoogte",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "EenheidGolfhoogte",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "Windrichting",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "EenheidWindrichting",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "Tijdstip",
+      "type": "long",
+      "default": -1
+    }
+  ]
+}

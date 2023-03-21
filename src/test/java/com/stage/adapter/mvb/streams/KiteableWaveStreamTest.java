@@ -63,6 +63,7 @@ public class KiteableWaveStreamTest extends KafkaTopologyTestBase {
     public void testWindSpeedConstantlyGoesDown() {
     	
         var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "190", "cm", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "180", "cm", 2L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "170", "cm", 3L));

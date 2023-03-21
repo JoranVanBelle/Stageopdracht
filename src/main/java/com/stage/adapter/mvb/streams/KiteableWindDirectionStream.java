@@ -35,10 +35,9 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 public class KiteableWindDirectionStream extends Thread {
 	
 	private static final String INTOPIC = "Meetnet.meting.raw";
-	private static final String WAVETOPIC = "Meetnet.meting.wind.direction.kitable";
-//	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NP7WVC"}));
+	private static final String WINDTOPIC = "Meetnet.meting.wind.direction.kitable";
 	
-	private static final Logger logger = LogManager.getLogger(KiteableWaveStream.class);
+	private static final Logger logger = LogManager.getLogger(KiteableWindDirectionStream.class);
 	
 	private static final String kvStoreName = "windDirectionStream";
 	private static final Map<String, double[]> threshold  = new HashMap<>() {{
@@ -50,7 +49,7 @@ public class KiteableWindDirectionStream extends Thread {
 		
 		Properties props = streamsConfig();
 		
-		Topology topo = buildTopology(threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(props), kiteableWindDirectionDetectedSerde(props), unkiteableWindDirectionDetected(props), props);
+		Topology topo = buildTopology(threshold, INTOPIC, WINDTOPIC, rawDataMeasuredSerde(props), kiteableWindDirectionDetectedSerde(props), unkiteableWindDirectionDetected(props), props);
 		KafkaStreams streams = new KafkaStreams(topo, props);
 		streams.start();
 		logger.info("ℹ️ KiteableWindDirectionStream started");

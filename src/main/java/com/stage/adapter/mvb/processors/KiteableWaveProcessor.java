@@ -5,8 +5,6 @@ import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import com.stage.KiteableCircumstancesDetected;
-import com.stage.KiteableWaveDetected;
 import com.stage.RawDataMeasured;
 
 public class KiteableWaveProcessor implements Processor<String, RawDataMeasured, String, RawDataMeasured> {
@@ -51,7 +49,7 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
         	return;
         }
         
-        if(isRecordEersteRecordInStateStore(mostRecentEvent, record)) {
+        if(isRecordFirstRecordInStateStore(mostRecentEvent, record)) {
             RawDataMeasured kitableWindDetected = new RawDataMeasured(
             		record.value().getSensorID(),
             		record.value().getLocatie(),
@@ -108,7 +106,7 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
 
     }
     
-    private static boolean isRecordEersteRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
+    private static boolean isRecordFirstRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
     	return mostRecentEvent.getTijdstip() == record.value().getTijdstip();
     }
     

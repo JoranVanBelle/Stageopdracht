@@ -1,17 +1,18 @@
 package com.stage.adapter.mvb;
 
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+
+import java.util.Properties;
+
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.TopologyTestDriver;
 
-import java.util.Properties;
-
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 
 public class KafkaTopologyTestBase {
-
+	
     private static final String MOCK_SCHEMA_REGISTRY_URL = "mock://test";
     protected TopologyTestDriver testDriver;
 
@@ -31,6 +32,7 @@ public class KafkaTopologyTestBase {
     protected static Properties serdesConfigTest(){
         Properties settings = new Properties();
         settings.put(SCHEMA_REGISTRY_URL_CONFIG,MOCK_SCHEMA_REGISTRY_URL);
+        
         return settings;
     }
 

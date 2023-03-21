@@ -58,7 +58,6 @@ public class KiteableWindDirectionStreamTest extends KafkaTopologyTestBase {
         var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.kiteableWindDetectedSerde(serdesConfigTest()).deserializer()).readRecordsToList();
         
         Assertions.assertEquals(3, windDetectionsList.size());
-        
     }
     
     @Test
