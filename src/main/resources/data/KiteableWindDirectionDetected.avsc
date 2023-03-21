@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "RawDataMeasured",
+  "name": "KiteableWindDirectionDetected",
   "namespace": "com.stage",
   "fields": [
     {

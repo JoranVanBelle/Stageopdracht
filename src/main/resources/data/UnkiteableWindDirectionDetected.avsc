@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "RawDataMeasured",
+  "name": "UnkiteableWindDirectionDetected",
   "namespace": "com.stage",
   "fields": [
     {

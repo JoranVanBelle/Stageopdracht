@@ -1,14 +1,8 @@
 package com.stage.adapter.mvb.producers;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -16,15 +10,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 import com.stage.adapter.mvb.helpers.Bearertoken;
 
-public class CurrentData implements Runnable {
+public class CurrentData extends Thread {
 
 	private static final int FETCH_API = 1000 * 60 * 60 * 1;	// ms * s * min * h
 	private final String api;
 	private String currentData;
+	private static final Logger logger = LogManager.getLogger(CurrentData.class);
 	
 	public CurrentData(String api) {
 		this.api = api;
@@ -48,7 +45,7 @@ public class CurrentData implements Runnable {
 		scheduler.scheduleAtFixedRate(() -> {
 			String token = Bearertoken.getBearerToken(this.api);
 			String response = fetchApi(String.format("%s/V2/currentData", this.api), token);
-			System.out.println("Current data retrieved");
+			logger.info("ℹ️ Current data retrieved");
 			setCurrentData(response);
 			
 		}, 0, FETCH_API, TimeUnit.MILLISECONDS);
@@ -70,11 +67,11 @@ public class CurrentData implements Runnable {
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 			apiResponse = response.body();
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		}
 		
 		return apiResponse;

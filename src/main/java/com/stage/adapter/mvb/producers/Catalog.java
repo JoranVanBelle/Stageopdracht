@@ -10,15 +10,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 import com.stage.adapter.mvb.helpers.Bearertoken;
 
-public class Catalog implements Runnable {
+public class Catalog extends Thread {
 
 	private static final int FETCH_API = 1000 * 60 * 60 * 168;	// ms * s * min * h - 1x in de 7d
 	private final String api;
 	private String catalog;
+
+	private static final Logger logger = LogManager.getLogger(Catalog.class);
 	
 	public Catalog(String api) {
 		this.api = api;
@@ -42,7 +46,7 @@ public class Catalog implements Runnable {
 		scheduler.scheduleAtFixedRate(() -> {
 			String token = Bearertoken.getBearerToken(this.api);
 			String response = fetchApi(String.format("%s/V2/catalog", this.api), token);
-			System.out.println("Catalog retrieved");
+			logger.info("ℹ️ Catalog retrieved");
 			setCatalog(response);
 			
 		}, 0, FETCH_API, TimeUnit.MILLISECONDS);
@@ -65,11 +69,11 @@ public class Catalog implements Runnable {
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 			apiResponse = response.body();
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.error("❌", e);
 		}
 		
 		return apiResponse;
