@@ -34,12 +34,6 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 							KiteableWeatherStream.genericRecordSerde(serdesConfigTest()),
 							KiteableWeatherStream.kiteableWeatherDetectedSerde(serdesConfigTest()),
 							KiteableWeatherStream.noKiteableWeatherDetectedSerde(serdesConfigTest()),
-							"WindHasFallenOff",
-							"UnkiteableWaveDetected",
-							"UnkiteableWindDirectionDetected",
-							"KiteableWindDetected",
-							"KiteableWaveDetected",
-							"KiteableWindDirectionDetected",
 							serdesConfigTest()
 							)
 				 );
@@ -63,7 +57,7 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 		
 		var kiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(serdesConfigTest()).deserializer()).readKeyValue();
 		
-		Assertions.assertEquals("NieuwpoortKiteable", kiteableEvent.value.getDataID());
+		Assertions.assertEquals("NieuwpoortKiteable1", kiteableEvent.value.getDataID());
 		Assertions.assertEquals("Nieuwpoort", kiteableEvent.value.getLocatie());
 		Assertions.assertEquals("9.00", kiteableEvent.value.getWindsnelheid());
 		Assertions.assertEquals("m/s", kiteableEvent.value.getEenheidWindsnelheid());
@@ -88,7 +82,7 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 		var unkiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(serdesConfigTest()).deserializer()).readKeyValue();
 		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(serdesConfigTest()).deserializer()).readRecordsToList();
 		
-		Assertions.assertEquals("NieuwpoortUnkiteable", unkiteableEvent.value.getDataID());
+		Assertions.assertEquals("NieuwpoortUnkiteable1", unkiteableEvent.value.getDataID());
 		Assertions.assertEquals("Nieuwpoort", unkiteableEvent.value.getLocatie());
 		Assertions.assertEquals("9.00", unkiteableEvent.value.getWindsnelheid());
 		Assertions.assertEquals("m/s", unkiteableEvent.value.getEenheidWindsnelheid());

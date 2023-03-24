@@ -48,14 +48,6 @@ public class KiteableWeatherStream extends Thread {
 	private static final String kvStoreNameKiteable = "kiteableWeatherStream";
 	private static final String kvStoreNameUnkiteable = "unkiteableWeatherStream";
 	
-	// Have to look for a better way than hard-coded
-	private static final String kiteableWindSpeedSchemaName = "KiteableWindDetected";
-	private static final String kiteableWaveSchemaName = "KiteableWaveDetected";
-	private static final String kiteableWindDirectionSchemaName = "KiteableWindDirectionDetected";
-	private static final String windHasFallenOffSchemaName = "WindHasFallenOff";
-	private static final String unkiteableWaveSchemaName = "UnkiteableWaveDetected";
-	private static final String unkiteableWindDirectionSchemaName = "UnkiteableWindDirectionDetected";
-	
 	private static final String[] sensoren = {"A2BGHA", "WDLGHA", "RA2GHA", "OSNGHA", "NPBGHA", "SWIGHA",
 										"MP0WC3", "MP7WC3", "NP7WC3", "MP0WVC", "MP7WVC", "NP7WVC", "A2BRHF", "RA2RHF", "OSNRHF"};
 	
@@ -70,13 +62,7 @@ public class KiteableWeatherStream extends Thread {
 				OUTTOPIC, 
 				genericRecordSerde(props), 
 				kiteableWeatherDetectedSerde(props), 
-				noKiteableWeatherDetectedSerde(props), 
-				windHasFallenOffSchemaName, 
-				unkiteableWaveSchemaName, 
-				unkiteableWindDirectionSchemaName, 
-				kiteableWindSpeedSchemaName, 
-				kiteableWaveSchemaName, 
-				kiteableWindDirectionSchemaName, 
+				noKiteableWeatherDetectedSerde(props),
 				props
 		);
 		
@@ -179,12 +165,6 @@ public class KiteableWeatherStream extends Thread {
 			GenericAvroSerde recordSerde,
 			SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetectedSerde,
 			SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetectedSerde,
-			String windHasFallenOffSchema,
-			String unkiteableWaveSchema,
-			String unkiteableWindDirectionSchema,
-			String kiteableWindSpeedSchema,
-			String kiteableWaveSchema,
-			String kiteableWindDirectionSchema,
 			Properties streamProperties
 	) {
 		StreamsBuilder builder = new StreamsBuilder();
@@ -218,13 +198,13 @@ public class KiteableWeatherStream extends Thread {
 			.split()
 			.branch((k,v) -> v.getSchema().getName().toString().startsWith("Kiteable"),
 					Branched.withConsumer(s -> s
-							.mapValues(v -> new KiteableWeatherDetected(v.get("DataID").toString(), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+							.mapValues(v -> new KiteableWeatherDetected(String.format("%s%d",v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
 							.peek((k,v) -> System.out.print(String.format("Kiteable branch -> key: %s, value: %s%n", k, v)))
 							.to(outtopic, Produced.with(Serdes.String(), kiteableWeatherDetectedSerde))
 							))
 			.branch((k,v) -> v.getSchema().getName().startsWith("NoKiteable"),
 					Branched.withConsumer(s -> s
-							.mapValues(v -> new NoKiteableWeatherDetected(v.get("DataID").toString(), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+							.mapValues(v -> new NoKiteableWeatherDetected(String.format("%s%d",v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
 							.peek((k,v) -> System.out.print(String.format("Unkiteable branch -> key: %s, value: %s%n", k, v)))
 							.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
 							));

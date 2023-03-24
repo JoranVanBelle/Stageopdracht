@@ -24,6 +24,6 @@ public class GracefulShutdown {
     	    System.exit(1);
     	}
     	System.exit(0);
-}
+    }
 	
 }

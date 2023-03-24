@@ -80,11 +80,11 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			System.err.printf("Kiteable%s%n", record.value());
 			
 			if(allKiteableFieldAreFilledIn(kiteable)) {
-				var output = new Record<>(kiteableKeyName, kiteable, record.timestamp(), record.headers());
+				var output = new Record<>(String.format("%s%d", kiteableKeyName, kiteable.getTijdstip()), kiteable, record.timestamp(), record.headers());
 				context.forward(output);
 				return;
 			} else if(allUnkiteableFieldAreFilledIn(unkiteable)) {
-				var output = new Record<>(unkiteableKeyName, unkiteable, record.timestamp(), record.headers());
+				var output = new Record<>(String.format("%s%d", unkiteableKeyName, unkiteable.getTijdstip()), unkiteable, record.timestamp(), record.headers());
 				context.forward(output);
 				return;
 			}
@@ -102,7 +102,7 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 //			System.out.printf("Else unkiteable: %s%n", unkiteable);
 			
 			if(allUnkiteableFieldAreFilledIn(unkiteable)) {
-				var output = new Record<>(unkiteableKeyName, unkiteable, record.timestamp(), record.headers());
+				var output = new Record<>(String.format("%s%d", unkiteableKeyName, unkiteable.getTijdstip()), unkiteable, record.timestamp(), record.headers());
 				context.forward(output);
 			}
 			
