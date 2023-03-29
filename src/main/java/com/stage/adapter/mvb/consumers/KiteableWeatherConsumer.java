@@ -25,8 +25,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.postgresql.ds.PGPoolingDataSource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 
@@ -38,9 +40,9 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 public class KiteableWeatherConsumer extends Thread {
 
 	private final Properties props;
-	private static Database database;
-	private static JavaMailSender emailSender;
+	private Database database;
 	private Consumer<String, GenericRecord> consumer;
+	private JavaMailSender emailSender;
 	
 	private static final String TOPIC = "Meetnet.meting.kiteable";
 	private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -49,15 +51,19 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	public KiteableWeatherConsumer(Properties props) {
 		this.props = props;
-		this.consumer = new KafkaConsumer<>(props);
-		this.database = new Database();
+		this.consumer = new KafkaConsumer<>(this.props);
+		database = new Database();
+		emailSender = getMailingProps();
 	}
 	
-	public KiteableWeatherConsumer(MockConsumer<String, GenericRecord> consumer) {
+	// Testpurposes
+	public KiteableWeatherConsumer(MockConsumer<String, GenericRecord> consumer, PGPoolingDataSource mockSource, JavaMailSender emailSender) {
 		this.props = null;
 		this.consumer = consumer;
+		database = new Database(mockSource);
+		this.emailSender = emailSender;
 	}
-
+	
 	@Override
 	public void run() {
 		Connection connection;
@@ -70,7 +76,7 @@ public class KiteableWeatherConsumer extends Thread {
 		
 	}
 	
-	public void writeToDatabase(Connection connection) {	
+	public void writeToDatabase(Connection connection) throws MailException, SQLException {	
 		consumer.subscribe(Arrays.asList(TOPIC));
 		
 		logger.info("ℹ️ Consumer will start writing to the database");
@@ -80,7 +86,11 @@ public class KiteableWeatherConsumer extends Thread {
 			for(ConsumerRecord<String, GenericRecord> record : records) {
 				GenericRecord value = record.value();
 				if(schemaIsKnown(value)) {
-
+					if(schemaIsKiteable(value)) {
+						var kiteable = (KiteableWeatherDetected) SpecificData.get().deepCopy(value.getSchema(), value);
+						sendEmail(kiteable, connection);
+					}
+					
 					insertDataIntoDatabase(value, connection);
 					
 				} else {
@@ -92,6 +102,52 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	private static boolean schemaIsKnown(GenericRecord value) {
 		return value.getSchema().getName().equals("KiteableWeatherDetected") || value.getSchema().getName().equals("NoKiteableWeatherDetected");
+	}
+	
+	private static boolean schemaIsKiteable(GenericRecord value) {
+		return value.getSchema().getName().equals("KiteableWeatherDetected");
+	}
+	
+	public void sendEmail(KiteableWeatherDetected content, Connection connection) throws MailException {
+		
+		String[] emailStrings = collectEmailAddresses(content.getLocatie(), connection);
+	    
+	    if(emailStrings != null) {
+		    MimeMessagePreparator messagePreparator = mimeMessage -> {
+		        MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, true);
+		        messageHelper.setFrom("joran.vanbelle@live.be");
+		        messageHelper.setReplyTo("joran.vanbelle@live.be");
+		        messageHelper.setTo(emailStrings);
+		        messageHelper.setSubject(String.format("Kiteable weather detected in %s", content.getLocatie()));
+		        messageHelper.setText(String.format("", content.getLocatie(), content.getWindsnelheid(), content.getEenheidWindsnelheid(), content.getGolfhoogte(), content.getEenheidGolfhoogte(), content.getWindrichting(), content.getEenheidWindrichting(), content.getTijdstip()));
+		    };
+		    
+		    emailSender.send(messagePreparator);
+	    }
+	    
+	}
+
+	private static String[] collectEmailAddresses(String location, Connection connection) {
+		
+		List<String> emailaddresses = new ArrayList<>();
+		
+		try {
+			Statement statement = connection.createStatement();
+			statement.execute(String.format("SELECT Email FROM %s", location));
+			ResultSet resultSet = statement.getResultSet();
+			
+		    while (resultSet.next()) {
+		    	emailaddresses.add(resultSet.getString(1));
+		    }
+			
+		    
+		    return emailaddresses.stream().toArray(String[]::new);
+		    
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 	
 	private static void insertDataIntoDatabase(GenericRecord value, Connection connection) {
@@ -107,7 +163,14 @@ public class KiteableWeatherConsumer extends Thread {
 		
 		PreparedStatement st;
 		try {
-			st = connection.prepareStatement("INSERT INTO Kiten (DataID, Loc, Windspeed, WindspeedUnit, Waveheight, WaveheightUnit, Winddirection, WinddirectionUnit, TimestampMeasurment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+			st = connection.prepareStatement("INSERT INTO Kiten "
+											+ "(DataID, Loc, "
+											+ "Windspeed, WindspeedUnit, "
+											+ "Waveheight, WaveheightUnit, "
+											+ "Winddirection, WinddirectionUnit, "
+											+ "TimestampMeasurment) "
+											+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+											);
 			st.setString(1, dataID);
 			st.setString(2, loc);
 			st.setString(3, windspeed);
@@ -138,4 +201,19 @@ public class KiteableWeatherConsumer extends Thread {
 		return kiteableWeatherDetected;
 	}
     
+	private static JavaMailSender getMailingProps() {
+		
+		JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+		
+		mailSender.setHost("mailhog");
+		mailSender.setPort(1025);
+		
+		Properties props = mailSender.getJavaMailProperties();
+	    props.put("mail.transport.protocol", "smtp");
+	    props.put("mail.smtp.auth", "false");
+	    props.put("mail.smtp.starttls.enable", "false");
+	    props.put("mail.debug", "false");
+		
+		return mailSender;
+	}
 }
