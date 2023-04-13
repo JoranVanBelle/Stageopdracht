@@ -222,8 +222,8 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			
 			mostRecentUnkiteableEvent.setWindsnelheid("");
 			mostRecentUnkiteableEvent.setEenheidWindsnelheid("");
-
-			if(mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
+			
+			if((Long) mostRecentKiteableEvent.getTijdstip() == null || mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
 				mostRecentKiteableEvent.setTijdstip(transformed.getTijdstip());
 			}
 		}
@@ -238,7 +238,7 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			mostRecentUnkiteableEvent.setGolfhoogte("");
 			mostRecentUnkiteableEvent.setEenheidGolfhoogte("");
 
-			if(mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
+			if((Long) mostRecentKiteableEvent.getTijdstip() == null || mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
 				mostRecentKiteableEvent.setTijdstip(transformed.getTijdstip());
 			}
 		}
@@ -253,7 +253,7 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			mostRecentUnkiteableEvent.setWindrichting("");
 			mostRecentUnkiteableEvent.setEenheidWindrichting("");
 
-			if(mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
+			if((Long) mostRecentKiteableEvent.getTijdstip() == null || mostRecentKiteableEvent.getTijdstip() < transformed.getTijdstip()) {
 				mostRecentKiteableEvent.setTijdstip(transformed.getTijdstip());
 			}
 		}

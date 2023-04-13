@@ -32,12 +32,12 @@ import com.stage.adapter.mvb.processors.KiteableWindDirectionProcessor;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-public class KiteableWindDirectionStream extends Thread {
+public class KiteableWinddirectionStream extends Thread {
 	
 	private static final String INTOPIC = "Meetnet.meting.raw";
 	private static final String WINDTOPIC = "Meetnet.meting.wind.direction.kitable";
 	
-	private static final Logger logger = LogManager.getLogger(KiteableWindDirectionStream.class);
+	private static final Logger logger = LogManager.getLogger(KiteableWinddirectionStream.class);
 	
 	private static final String kvStoreName = "windDirectionStream";
 	private static final Map<String, double[]> threshold  = new HashMap<>() {{

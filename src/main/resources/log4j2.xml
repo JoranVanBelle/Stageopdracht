@@ -1,12 +1,12 @@
-<Configuration status="info" name="baeldung" packages="">
+<Configuration status="error" name="adapter.mvb" packages="">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p %m%n"/>
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p %m%n"/>
     </Console>
   </Appenders>
   <Loggers>
-	  <Root level="all">
-		  <AppenderRef ref="Console" />
-  	  </Root>
+    <Root level="warn">
+      <AppenderRef ref="Console" />
+    </Root>
   </Loggers>
 </Configuration>

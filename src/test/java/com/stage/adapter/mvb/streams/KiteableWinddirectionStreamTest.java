@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import com.stage.RawDataMeasured;
 import com.stage.adapter.mvb.KafkaTopologyTestBase;
 
-public class KiteableWindDirectionStreamTest extends KafkaTopologyTestBase {
+public class KiteableWinddirectionStreamTest extends KafkaTopologyTestBase {
 
     private static final String RAW_TOPIC = "raw";
     private static final String KITABLE_WIND_DETECTED_TOPIC = "wind.direction";
@@ -20,13 +20,13 @@ public class KiteableWindDirectionStreamTest extends KafkaTopologyTestBase {
     @BeforeEach
     void setup() {
     	this.testDriver = createTestDriver(
-    			KiteableWindDirectionStream.buildTopology(
+    			KiteableWinddirectionStream.buildTopology(
     					Map.of("S1", new double[] {10.00, 100.00}, "S2", new double[] {50.00, 130.00}),
     					RAW_TOPIC,
     					KITABLE_WIND_DETECTED_TOPIC,
-    					KiteableWindDirectionStream.rawDataMeasuredSerde(serdesConfigTest()),
-    					KiteableWindDirectionStream.kiteableWindDirectionDetectedSerde(serdesConfigTest()),
-    					KiteableWindDirectionStream.unkiteableWindDirectionDetected(serdesConfigTest()),
+    					KiteableWinddirectionStream.rawDataMeasuredSerde(serdesConfigTest()),
+    					KiteableWinddirectionStream.kiteableWindDirectionDetectedSerde(serdesConfigTest()),
+    					KiteableWinddirectionStream.unkiteableWindDirectionDetected(serdesConfigTest()),
     					serdesConfigTest()
     					
 				)
