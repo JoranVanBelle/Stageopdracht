@@ -31,12 +31,21 @@ public class ApplicationHelper extends Thread{
 	public static final int CREATE_EVENTS = 1000 * 05 * 01 * 1; // 1000 * 60 * 60 * 1
 	private final CurrentData currentData;
 	private final Catalog catalog;
+	private final String bootstrap_servers;
+	private final String schema_registry;
 
 	private static final Logger logger = LogManager.getLogger(Application.class);
 	
-	public ApplicationHelper(CurrentData currentData, Catalog catalog) {
+	public ApplicationHelper(
+			CurrentData currentData, 
+			Catalog catalog,
+			String bootstrap_servers,
+			String schema_registry
+		) {
 		this.currentData = currentData;
 		this.catalog = catalog;
+		this.bootstrap_servers = bootstrap_servers;
+		this.schema_registry = schema_registry;
 	}
 	
 	@Override
@@ -49,7 +58,7 @@ public class ApplicationHelper extends Thread{
 			
 			for(String sensor : sensoren) {
 				String[] params = getParams(cat, data, sensor);
-				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
+				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
 				rdmProd.createEvent();
 			}
 			
@@ -58,15 +67,15 @@ public class ApplicationHelper extends Thread{
 		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
 	}
 	
-private static Properties getProperties() {
+private static Properties getProperties(String bootstrap_servers, String schema_registry) {
 		
         final Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.RETRIES_CONFIG, 0);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
         
         return props;
 	}

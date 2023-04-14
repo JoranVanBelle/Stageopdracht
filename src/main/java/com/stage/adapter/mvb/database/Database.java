@@ -1,11 +1,6 @@
 package com.stage.adapter.mvb.database;
 
-import java.util.Optional;
-
-import org.postgresql.ds.PGPoolingDataSource;
 import org.postgresql.ds.PGSimpleDataSource;
-
-import jakarta.activation.DataSource;
 
 public class Database {
 
@@ -15,11 +10,11 @@ public class Database {
 		source = new PGSimpleDataSource(); 
 	}
 	
-	public PGSimpleDataSource getPGPoolingDataSource() {
-		source.setDatabaseName(Optional.ofNullable(System.getenv("DATABASE_URL")).orElseThrow(() -> new IllegalArgumentException("DATABASE_URL is required")));
-		source.setUser(Optional.ofNullable(System.getenv("DATABASE_USER")).orElseThrow(() -> new IllegalArgumentException("DATABASE_USER is required")));
-		source.setPassword(Optional.ofNullable(System.getenv("DATABASE_PASSWORD")).orElseThrow(() -> new IllegalArgumentException("DATABASE_PASSWORD is required")));
-	
+	public PGSimpleDataSource getPGPoolingDataSource(String database_url, String database_user, String database_password) {
+		source.setDatabaseName(database_url);
+		source.setUser(database_user);
+		source.setPassword(database_password);
+		System.err.println("Database connection created");
 		return source;
 	}
 	

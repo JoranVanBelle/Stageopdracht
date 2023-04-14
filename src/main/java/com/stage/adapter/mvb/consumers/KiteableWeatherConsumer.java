@@ -28,8 +28,7 @@ import com.stage.adapter.mvb.service.WeatherService;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class KiteableWeatherConsumer extends Thread {
-
-	private final Properties props;
+	
 	private Database database;
 	private NamedParameterJdbcTemplate jdbcTemplate;
 	private Consumer<String, GenericRecord> consumer;
@@ -40,26 +39,22 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	private static final Logger logger = LogManager.getLogger(KiteableWeatherConsumer.class);
 	
-	public KiteableWeatherConsumer(Properties props) {
-		this.props = props;
+	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password) {
 		this.consumer = new KafkaConsumer<>(props);
 		this.database = new Database();
-		this.database = new Database();
-		this.jdbcTemplate = new NamedParameterJdbcTemplate(database.getPGPoolingDataSource());
+		this.jdbcTemplate = new NamedParameterJdbcTemplate(database.getPGPoolingDataSource(database_url, database_user, database_password));
 		this.weatherService = new WeatherService(jdbcTemplate);
 		this.emailService = new EmailService(jdbcTemplate);
 	}
 	
 	// Test purpose
 	public KiteableWeatherConsumer(
-			Properties props,
 			Consumer<String, GenericRecord> consumer,
 			WeatherService weatherService,
 			EmailService emailService,
 			NamedParameterJdbcTemplate jdbcTemplate,
 			Database database
 	) {
-		this.props = props;
 		this.consumer = consumer;
 		this.weatherService = weatherService;
 		this.emailService = emailService;

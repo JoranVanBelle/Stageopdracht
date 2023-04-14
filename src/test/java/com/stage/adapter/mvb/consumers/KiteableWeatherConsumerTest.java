@@ -29,7 +29,6 @@ public class KiteableWeatherConsumerTest {
 	
 	private KiteableWeatherConsumer kiteableWeatherConsumer;
 	
-	private Properties mockProps;
 	private Consumer<String, GenericRecord> mockConsumer = Mockito.mock(Consumer.class);
 	private WeatherService mockWeatherService = Mockito.mock(WeatherService.class);
 	private EmailService mockEmailService = Mockito.mock(EmailService.class);
@@ -41,7 +40,6 @@ public class KiteableWeatherConsumerTest {
 	@BeforeEach
 	public void setup() {
 		kiteableWeatherConsumer = new KiteableWeatherConsumer(
-				mockProps,
 				mockConsumer,
 				mockWeatherService,
 				mockEmailService,

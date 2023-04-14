@@ -76,8 +76,6 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			
 			stateStoreKiteable.put(kiteableKeyName, kiteable);
 			stateStoreUnkiteable.put(unkiteableKeyName, unkiteable);
-
-			System.err.printf("Kiteable%s%n", record.value());
 			
 			if(allKiteableFieldAreFilledIn(kiteable)) {
 				var output = new Record<>(String.format("%s%d", kiteableKeyName, kiteable.getTijdstip()), kiteable, record.timestamp(), record.headers());
@@ -95,11 +93,8 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			var unkiteable = (NoKiteableWeatherDetected) list.get(0);
 			var kiteable = (KiteableWeatherDetected) list.get(1);
 			
-			System.err.printf("Unkiteable%s%n", record.value());
-			
 			stateStoreUnkiteable.put(unkiteableKeyName, unkiteable);
 			stateStoreKiteable.put(kiteableKeyName, kiteable);
-//			System.out.printf("Else unkiteable: %s%n", unkiteable);
 			
 			if(allUnkiteableFieldAreFilledIn(unkiteable)) {
 				var output = new Record<>(String.format("%s%d", unkiteableKeyName, unkiteable.getTijdstip()), unkiteable, record.timestamp(), record.headers());

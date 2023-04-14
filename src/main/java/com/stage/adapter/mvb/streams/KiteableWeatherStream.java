@@ -1,163 +1,133 @@
 package com.stage.adapter.mvb.streams;
 
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Branched;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.Stores;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import com.stage.KiteableWaveDetected;
 import com.stage.KiteableWeatherDetected;
-import com.stage.KiteableWindDetected;
-import com.stage.KiteableWindDirectionDetected;
 import com.stage.NoKiteableWeatherDetected;
-import com.stage.UnkiteableWaveDetected;
-import com.stage.UnkiteableWindDetected;
-import com.stage.UnkiteableWindDirectionDetected;
-import com.stage.adapter.mvb.helpers.GracefulShutdown;
 import com.stage.adapter.mvb.processors.KiteableWeatherReconProcessor;
 
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-public class KiteableWeatherStream extends Thread {
-
-	private static final String WINDSPEEDTOPIC = "Meetnet.meting.wind.kiteable";
-	private static final String WAVETOPIC = "Meetnet.meting.wave.kiteable";
-	private static final String WINDDIRECTIONTOPIC = "Meetnet.meting.wind.direction.kiteable";
-	private static final String OUTTOPIC = "Meetnet.meting.kiteable";
-	
-	
-	private static final Logger logger = LogManager.getLogger(KiteableWeatherStream.class);
+public class KiteableWeatherStream {
 	
 	private static final String kvStoreNameKiteable = "kiteableWeatherStream";
 	private static final String kvStoreNameUnkiteable = "unkiteableWeatherStream";
 	
-	private static final String[] sensoren = {"A2BGHA", "WDLGHA", "RA2GHA", "OSNGHA", "NPBGHA", "SWIGHA",
-										"MP0WC3", "MP7WC3", "NP7WC3", "MP0WVC", "MP7WVC", "NP7WVC", "A2BRHF", "RA2RHF", "OSNRHF"};
+//	@Override
+//	public void run() {
+//		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry);
+//		
+//		Topology topology = buildTopology(
+//				WINDSPEEDTOPIC, 
+//				WAVETOPIC, 
+//				WINDDIRECTIONTOPIC, 
+//				OUTTOPIC, 
+//				genericRecordSerde(props), 
+//				kiteableWeatherDetectedSerde(props), 
+//				noKiteableWeatherDetectedSerde(props),
+//				props
+//		);
+//		
+//		KafkaStreams streams = new KafkaStreams(topology, props);
+//		
+//		streams.start();
+//		logger.info("ℹ️ KiteableWeatherStream started");
+//		
+//		GracefulShutdown.gracefulShutdown(streams);
+//				
+//	}
+//	
+//	private static Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry) {
+//		Properties settings = new Properties();
+//
+//		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, app_id);
+//		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
+//		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+//
+//		return settings;
+//	}
+//	
+//	public static GenericAvroSerde genericRecordSerde(Properties envProps) {
+//		GenericAvroSerde genericAvroSerde = new GenericAvroSerde();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		genericAvroSerde.configure(serdeConfig, false);
+//		return genericAvroSerde;
+//	}
+//	
+//	public static SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetected = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		kiteableWeatherDetected.configure(serdeConfig, false);
+//		return kiteableWeatherDetected;
+//	}
+//	
+//	public static SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetected = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		noKiteableWeatherDetected.configure(serdeConfig, false);
+//		return noKiteableWeatherDetected;
+//	}
+//	
+//	public static SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		kiteableWindDetectedSerde.configure(serdeConfig, false);
+//		return kiteableWindDetectedSerde;
+//	}
+//	
+//	public static SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde(Properties envProps) {
+//		final SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		windHasFallenOffSerde.configure(serdeConfig, false);
+//		return windHasFallenOffSerde;
+//	}
+//	
+//	public static SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		kiteableWaveDetectedSerde.configure(serdeConfig, false);
+//		return kiteableWaveDetectedSerde;
+//	}
+//	
+//	public static SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetected = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		unkiteableWaveDetected.configure(serdeConfig, false);
+//		return unkiteableWaveDetected;
+//	}
+//	
+//	public static SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		kiteableWindDirectionDetectedSerde.configure(serdeConfig, false);
+//		return kiteableWindDirectionDetectedSerde;
+//	}
+//	
+//	public static SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetectedSerde(Properties envProps) {
+//		final SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected = new SpecificAvroSerde<>();
+//		Map<String, String> serdeConfig = new HashMap<>();
+//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+//		unkiteableWindDirectionDetected.configure(serdeConfig, false);
+//		return unkiteableWindDirectionDetected;
+//	}	
 	
-	@Override
-	public void run() {
-		Properties props = streamsConfig();
-		
-		Topology topology = buildTopology(
-				WINDSPEEDTOPIC, 
-				WAVETOPIC, 
-				WINDDIRECTIONTOPIC, 
-				OUTTOPIC, 
-				genericRecordSerde(props), 
-				kiteableWeatherDetectedSerde(props), 
-				noKiteableWeatherDetectedSerde(props),
-				props
-		);
-		
-		KafkaStreams streams = new KafkaStreams(topology, props);
-		
-		streams.start();
-		logger.info("ℹ️ KiteableWeatherStream started");
-		
-		GracefulShutdown.gracefulShutdown(streams);
-				
-	}
-	
-	private static Properties streamsConfig() {
-		Properties settings = new Properties();
-
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, Optional.ofNullable(System.getenv("APP_ID")).orElseThrow(() -> new IllegalArgumentException("APP_ID is required")));
-		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Optional.ofNullable(System.getenv("BOOTSTRAP_SERVERS")).orElseThrow(() -> new IllegalArgumentException("BOOTSTRAP_SERVERS is required")));
-		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, Optional.ofNullable(System.getenv("SCHEMA_REGISTRY_URL")).orElseThrow(() -> new IllegalArgumentException("SCHEMA_REGISTRY_URL is required")));
-
-		return settings;
-	}
-	
-	public static GenericAvroSerde genericRecordSerde(Properties envProps) {
-		GenericAvroSerde genericAvroSerde = new GenericAvroSerde();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		genericAvroSerde.configure(serdeConfig, false);
-		return genericAvroSerde;
-	}
-	
-	public static SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetected = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		kiteableWeatherDetected.configure(serdeConfig, false);
-		return kiteableWeatherDetected;
-	}
-	
-	public static SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetected = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		noKiteableWeatherDetected.configure(serdeConfig, false);
-		return noKiteableWeatherDetected;
-	}
-	
-	public static SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<KiteableWindDetected> kiteableWindDetectedSerde = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		kiteableWindDetectedSerde.configure(serdeConfig, false);
-		return kiteableWindDetectedSerde;
-	}
-	
-	public static SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde(Properties envProps) {
-		final SpecificAvroSerde<UnkiteableWindDetected> windHasFallenOffSerde = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		windHasFallenOffSerde.configure(serdeConfig, false);
-		return windHasFallenOffSerde;
-	}
-	
-	public static SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		kiteableWaveDetectedSerde.configure(serdeConfig, false);
-		return kiteableWaveDetectedSerde;
-	}
-	
-	public static SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetected = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		unkiteableWaveDetected.configure(serdeConfig, false);
-		return unkiteableWaveDetected;
-	}
-	
-	public static SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		kiteableWindDirectionDetectedSerde.configure(serdeConfig, false);
-		return kiteableWindDirectionDetectedSerde;
-	}
-	
-	public static SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetectedSerde(Properties envProps) {
-		final SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected = new SpecificAvroSerde<>();
-		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-		unkiteableWindDirectionDetected.configure(serdeConfig, false);
-		return unkiteableWindDirectionDetected;
-	}	
-	
-	protected static Topology buildTopology(
+	protected static StreamsBuilder buildTopology(
 			String windSpeedTopic,
 			String waveHeightTopic,
 			String windDirectionTopic,
@@ -165,9 +135,9 @@ public class KiteableWeatherStream extends Thread {
 			GenericAvroSerde recordSerde,
 			SpecificAvroSerde<KiteableWeatherDetected> kiteableWeatherDetectedSerde,
 			SpecificAvroSerde<NoKiteableWeatherDetected> noKiteableWeatherDetectedSerde,
-			Properties streamProperties
+			Properties streamProperties,
+			StreamsBuilder builder
 	) {
-		StreamsBuilder builder = new StreamsBuilder();
 		
 		builder.addStateStore(
 				Stores.keyValueStoreBuilder(
@@ -214,7 +184,7 @@ public class KiteableWeatherStream extends Thread {
 //					.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
 //					));
 		
-		return builder.build(streamProperties);
+		return builder;
 	}
 	
 	private static String getLocation(String sensorID) {

@@ -12,8 +12,7 @@ import com.stage.RawDataMeasured;
 import com.stage.adapter.mvb.service.RawDataService;
 
 public class RawDataMeasuredProducer {
-
-	private final Properties props;
+	
 	private String sensorId;
 	private String locatie;
 	private String waarde;
@@ -23,7 +22,6 @@ public class RawDataMeasuredProducer {
 	private RawDataService rawDataService;
 	
 	public RawDataMeasuredProducer(Properties props, String sensorId, String locatie, String waarde, String eenheid, Long tijdstip) {
-		this.props = props;
 		this.sensorId = sensorId;
 		this.locatie = locatie;
 		this.waarde = waarde;

@@ -20,11 +20,15 @@ public class CurrentData extends Thread {
 
 	private static final int FETCH_API = 1000 * 60 * 60 * 1;	// ms * s * min * h
 	private final String api;
+	private final String username;
+	private final String password;
 	private String currentData;
 	private static final Logger logger = LogManager.getLogger(CurrentData.class);
 	
-	public CurrentData(String api) {
+	public CurrentData(String api, String username, String password) {
 		this.api = api;
+		this.username = username;
+		this.password = password;
 	}
 	
 	public String getCurrentDataString() {
@@ -43,8 +47,8 @@ public class CurrentData extends Thread {
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			String token = Bearertoken.getBearerToken(this.api);
-			String response = fetchApi(String.format("%s/V2/currentData", this.api), token);
+			String token = Bearertoken.getBearerToken(api, username, password);
+			String response = fetchApi(String.format("%s/V2/currentData", api), token);
 			logger.info("ℹ️ Current data retrieved");
 			setCurrentData(response);
 			

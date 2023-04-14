@@ -19,20 +19,22 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
 
     private static final String RAW_TOPIC = "raw";
     private static final String KITABLE_WIND_DETECTED_TOPIC = "wind";
+	private static final String schema_registry = "mock://test";
 
     @BeforeEach
     void setup() {
         this.testDriver = createTestDriver(
-                KiteableWindStream.buildTopology(
+        		KiteableWindStream.buildTopology(
                         Set.of("S1", "S2"),
                         5,
                         RAW_TOPIC,
                         KITABLE_WIND_DETECTED_TOPIC,
-                        KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()),
-                        KiteableWindStream.kiteableWindDetectedSerde(serdesConfigTest()),
-                        KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()),
-                        serdesConfigTest()
-                )
+                        MergedWeatherStream.rawDataMeasuredSerde(schema_registry),
+                        MergedWeatherStream.kiteableWindDetectedSerde(schema_registry),
+                        MergedWeatherStream.windHasFallenOffSerde(schema_registry),
+                        serdesConfigTest(),
+                        new StreamsBuilder()
+                ).build()
         );
     }
     
@@ -43,7 +45,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
 
     @Test
     public void testWindSpeedConstantlyGoesUp() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -56,7 +58,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 9L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "10.00", "m/s", 10L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.kiteableWindDetectedSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).deserializer()).readRecordsToList();
         
         Assertions.assertEquals(2, windDetectionsList.size());
         System.out.println(windDetectionsList.get(0));
@@ -65,7 +67,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
 
     @Test
     public void testWindSpeedConstantlyGoesDown() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "8.00", "m/s", 2L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "7.00", "m/s", 3L));
@@ -76,7 +78,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 8L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 9L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readKeyValue();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readKeyValue();
 
 //        Assertions.assertEquals(2, windDetectionsList.size());
         System.err.println(windDetectionsList);
@@ -85,7 +87,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedAlwaysTooLow() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -98,7 +100,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "5.00", "m/s", 9L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "4.00", "m/s", 10L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(1, windDetectionsList.size());
 
@@ -106,7 +108,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedAlwaysKiteable() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "8.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 2L));
@@ -114,7 +116,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "7.72", "m/s", 4L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 5L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(1, windDetectionsList.size());
 
@@ -122,7 +124,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedFluctuating() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -141,7 +143,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "8.00", "m/s", 15L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "7.00", "m/s", 16L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(7, windDetectionsList.size());
 
@@ -149,7 +151,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedConstantlyGoesUpTwoSensors() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -173,7 +175,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten elders", "9.00", "m/s", 9L));
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten elders", "10.00", "m/s", 10L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.kiteableWindDetectedSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).deserializer()).readRecordsToList();
         
         Assertions.assertEquals(4, windDetectionsList.size());
         
@@ -181,7 +183,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedConstantlyGoesDownTwoSensors() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "8.00", "m/s", 2L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "7.00", "m/s", 3L));
@@ -203,7 +205,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten elders", "2.00", "m/s", 9L));
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten elders", "1.00", "m/s", 10L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(4, windDetectionsList.size());
 
@@ -211,7 +213,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedAlwaysTooLowTwoSensors() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -235,7 +237,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "5.00", "m/s", 9L));
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "4.00", "m/s", 10L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(2, windDetectionsList.size());
 
@@ -243,7 +245,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
 
     @Test
     public void testWindSpeedAlwaysKiteableTwoSensors() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "8.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "9.00", "m/s", 2L));
@@ -257,7 +259,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "7.72", "m/s", 4L));
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "9.00", "m/s", 5L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(2, windDetectionsList.size());
 
@@ -265,7 +267,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
     
     @Test
     public void testWindSpeedFluctuatingTwoSensors() {
-        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), KiteableWindStream.rawDataMeasuredSerde(serdesConfigTest()).serializer());
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
 
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 1L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 2L));
@@ -301,7 +303,7 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "8.00", "m/s", 15L));
         rawMeasurements.pipeInput("S2", new RawDataMeasured("S2", "Twoasten", "7.00", "m/s", 16L));
         
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(serdesConfigTest()).deserializer()).readRecordsToList();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
         Assertions.assertEquals(14, windDetectionsList.size());
 

@@ -8,5 +8,6 @@
     <Root level="warn">
       <AppenderRef ref="Console" />
     </Root>
+    <Logger name="org.apache.kafka.clients.producer.KafkaProducer" level="off" />
   </Loggers>
 </Configuration>
