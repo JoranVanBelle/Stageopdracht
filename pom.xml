@@ -14,14 +14,14 @@
 	<name>adapter.mvb</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
-        <maven.compiler.source>19</maven.compiler.source>
-        <maven.compiler.target>19</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 		<confluent.version>7.3.1</confluent.version>
         <avro.version>1.10.1</avro.version>
         <kafka.version>3.3.2</kafka.version>
         <log4j.version>2.19.0</log4j.version>
         <slf4j.version>2.0.5</slf4j.version>
-		<java.version>17</java.version>
+		<java.version>19</java.version>
 	</properties>
 
     <dependencyManagement>
@@ -186,8 +186,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>19</source>
-                    <target>19</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
             <plugin>

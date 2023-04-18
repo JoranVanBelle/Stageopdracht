@@ -15,7 +15,6 @@ public class KafkaTestcontainer implements BeforeAllCallback, AfterAllCallback {
 		kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
 		
 		kafka.start();
-		
 	}
 
 	@Override

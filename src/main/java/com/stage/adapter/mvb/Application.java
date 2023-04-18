@@ -7,7 +7,6 @@ import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
 
 import com.stage.adapter.mvb.consumers.KiteableWeatherConsumer;
 import com.stage.adapter.mvb.helpers.ApplicationHelper;
@@ -47,7 +46,7 @@ public class Application {
 		Application.schema_registry = System.getenv("SCHEMA_REGISTRY_URL");
 	}
 
-	public void setup(String api, String database_url, String database_user, String database_password, String username,
+	public static void setup(String api, String database_url, String database_user, String database_password, String username,
 			String password, String app_id, String bootstrap_servers, String schema_registry) {
 		Application.api = api;
 		Application.database_url = database_url;
@@ -61,7 +60,7 @@ public class Application {
 	}
 
 	public static void main(String[] args) {
-		Configurator.initialize(null, "src/main/resources/log4j2.xml");
+//		Configurator.initialize(null, "src/main/resources/log4j2.xml");
 		setup();
 		startApp();
 	}
