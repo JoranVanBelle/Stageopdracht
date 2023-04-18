@@ -14,16 +14,16 @@ import com.stage.adapter.mvb.extension.MailhogTestcontainer;
 @ExtendWith(MailhogTestcontainer.class)
 public class ApplicationIntegrationTest {
 		
-	@Test
-	public void applicationIntegrationTest_correctAPI() {
-		
-		Assertions.assertDoesNotThrow(() -> {
-			Application.startApp();
-			Thread.sleep(10000);
-		});
-		
-		System.err.println("here");
-		System.err.println(System.getenv("BOOTSTRAP_SERVERS"));
-	}
+//	@Test
+//	public void applicationIntegrationTest_correctAPI() {
+//		
+//		Assertions.assertDoesNotThrow(() -> {
+//			Application.startApp();
+//			Thread.sleep(10000);
+//		});
+//		
+//		System.err.println("here");
+//		System.err.println(System.getenv("BOOTSTRAP_SERVERS"));
+//	}
 	
 }

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -27,6 +29,7 @@ import com.stage.UnkiteableWindDetected;
 import com.stage.UnkiteableWindDirectionDetected;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
@@ -64,10 +67,10 @@ public class MergedWeatherStream extends Thread {
 		
 		StreamsBuilder builder = new StreamsBuilder();
 		
-		KiteableWaveStream waveStream = new KiteableWaveStream();
-		KiteableWindStream windspeedStream = new KiteableWindStream();
-		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream();
-		KiteableWeatherStream weatherStream = new KiteableWeatherStream();
+//		KiteableWaveStream waveStream = new KiteableWaveStream();
+//		KiteableWindStream windspeedStream = new KiteableWindStream();
+//		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream();
+//		KiteableWeatherStream weatherStream = new KiteableWeatherStream();
 		
 		StreamsBuilder waveStreamsBuilder = KiteableWaveStream.buildTopology(
 												waveheightSensors, 
@@ -202,7 +205,9 @@ public class MergedWeatherStream extends Thread {
 		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, app_id);
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
 		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
-
+        settings.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        settings.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class); 
+		
 		return settings;
 	}
 }
