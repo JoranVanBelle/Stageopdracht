@@ -1,5 +1,8 @@
 package com.stage.adapter.mvb.infrastructure;
 
+import java.net.MalformedURLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -12,32 +15,28 @@ import com.stage.RawDataMeasured;
 
 public class RawDataInfrastructure {
 
-	private final String TOPIC;
+	private final String TOPIC = "Meetnet.meting.raw";
 	private KafkaProducer<String, RawDataMeasured> producer;
 	
 	public RawDataInfrastructure(Properties props) {
-		TOPIC = "Meetnet.meting.raw";
 		producer = new KafkaProducer<String, RawDataMeasured>(props);
 	}
 	
 	//Testpurpose
 	public RawDataInfrastructure(
-			String TOPIC,
 			KafkaProducer<String, RawDataMeasured> producer,
 			Properties props
 	) {
-		this.TOPIC = TOPIC;
 		this.producer = producer;
 	}
-	
-	private static final Logger logger = LogManager.getLogger(RawDataInfrastructure.class);
 	
 	public void produce(RawDataMeasured rawDataMeasured) {
 		
 		final ProducerRecord<String, RawDataMeasured> record = new ProducerRecord<String, RawDataMeasured>(TOPIC, rawDataMeasured.getSensorID(), rawDataMeasured);
+
 		producer.send(record);
 		producer.flush();
-		
+		System.out.println("ℹ️ Event published");
 }
 	
 }

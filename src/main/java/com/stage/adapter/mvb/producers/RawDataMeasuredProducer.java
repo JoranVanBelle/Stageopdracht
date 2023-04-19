@@ -38,11 +38,7 @@ public class RawDataMeasuredProducer {
 		rdm.setWaarde(waarde);
 		rdm.setEenheid(eenheid);
 		rdm.setTijdstip(tijdstip);
-		
+
 		rawDataService.produce(rdm);
-		
-
-
-		
 	}
 }

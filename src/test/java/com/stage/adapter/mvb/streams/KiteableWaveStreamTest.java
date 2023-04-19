@@ -30,9 +30,8 @@ public class KiteableWaveStreamTest extends KafkaTopologyTestBase {
 						MergedWeatherStream.rawDataMeasuredSerde(schema_registry),
 						MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry),
 						MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry),
-						serdesConfigTest(),
-						new StreamsBuilder()
-				).build()
+						serdesConfigTest()
+				)
 		);
 	}
 	

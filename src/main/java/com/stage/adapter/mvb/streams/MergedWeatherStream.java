@@ -36,8 +36,8 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 public class MergedWeatherStream extends Thread {
 
 	private static final String INTOPIC = "Meetnet.meting.raw";
-	private static final String WINDSPEEDTOPIC = "Meetnet.meting.wind.direction.kitable";
-	private static final String WAVETOPIC = "Meetnet.meting.wave.kitable";
+	private static final String WINDSPEEDTOPIC = "Meetnet.meting.wind.direction.kiteable";
+	private static final String WAVETOPIC = "Meetnet.meting.wave.kiteable";
 	private static final String WINDDIRECTIONTOPIC = "Meetnet.meting.wind.direction.kiteable";
 	private static final String OUTTOPIC = "Meetnet.meting.kiteable";
 	
@@ -72,51 +72,45 @@ public class MergedWeatherStream extends Thread {
 //		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream();
 //		KiteableWeatherStream weatherStream = new KiteableWeatherStream();
 		
-		StreamsBuilder waveStreamsBuilder = KiteableWaveStream.buildTopology(
+		Topology waveStreamsBuilder = KiteableWaveStream.buildTopology(
 												waveheightSensors, 
 												waveheightThreshold, 
 												INTOPIC, WAVETOPIC, 
 												rawDataMeasuredSerde(schema_registry), 
 												kiteableWaveDetectedSerde(schema_registry), 
 												unkiteableWaveDetectedSerde(schema_registry), 
-												streamsConfig(app_id, bootstrap_servers, schema_registry), 
-												builder);
+												streamsConfig(app_id, bootstrap_servers, schema_registry));
 		
-		StreamsBuilder windspeedStreamsBuilder = KiteableWindStream.buildTopology(
+		Topology windspeedStreamsBuilder = KiteableWindStream.buildTopology(
 													windspeedSensors, 
 													windspeedThreshold, 
 													INTOPIC, WINDSPEEDTOPIC, 
 													rawDataMeasuredSerde(schema_registry), 
 													kiteableWindDetectedSerde(schema_registry), 
 													windHasFallenOffSerde(schema_registry), 
-													streamsConfig(app_id, bootstrap_servers, schema_registry), 
-													waveStreamsBuilder);
+													streamsConfig(app_id, bootstrap_servers, schema_registry));
 		
-		StreamsBuilder winddirectionStreamsBuilder = KiteableWinddirectionStream.buildTopology(
+		Topology winddirectionStreamsBuilder = KiteableWinddirectionStream.buildTopology(
 														winddirectionThreshold, 
 														INTOPIC, WINDDIRECTIONTOPIC, 
 														rawDataMeasuredSerde(schema_registry), 
 														kiteableWinddirectionDetectedSerde(schema_registry), 
 														unkiteableWinddirectionDetected(schema_registry), 
-														streamsConfig(app_id, bootstrap_servers, schema_registry), 
-														windspeedStreamsBuilder);
+														streamsConfig(app_id, bootstrap_servers, schema_registry));
 		
-		StreamsBuilder weatherStreamsBuilder = KiteableWeatherStream.buildTopology(
+		Topology weatherStreamsBuilder = KiteableWeatherStream.buildTopology(
 													WINDSPEEDTOPIC, WAVETOPIC, 
 													WINDDIRECTIONTOPIC, OUTTOPIC, 
 													genericRecordSerde(schema_registry), 
 													kiteableWeatherDetectedSerde(schema_registry), 
 													noKiteableWeatherDetectedSerde(schema_registry), 
-													streamsConfig(app_id, bootstrap_servers, schema_registry), 
-													winddirectionStreamsBuilder);
+													streamsConfig(app_id, bootstrap_servers, schema_registry));
 		
-		Topology topo = weatherStreamsBuilder.build();
-		
-		KafkaStreams streams = new KafkaStreams(topo, streamsConfig(app_id, bootstrap_servers, schema_registry));
+//		KafkaStreams streams = new KafkaStreams(topo, streamsConfig(app_id, bootstrap_servers, schema_registry));
 		
 		logger.info("ℹ️ Kafka streams started");
 		
-		streams.start();
+//		streams.start();
 	}
 	
 	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(String schema_registry) {
@@ -200,13 +194,10 @@ public class MergedWeatherStream extends Thread {
 	}
 	
 	private static Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry) {
-		
 		Properties settings = new Properties();
 		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, app_id);
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
 		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
-        settings.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        settings.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class); 
 		
 		return settings;
 	}

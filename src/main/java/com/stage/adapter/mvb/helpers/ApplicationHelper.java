@@ -27,7 +27,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 public class ApplicationHelper extends Thread{
 
 
-	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA"};
+	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA", "NP7WVC"};
 	public static final int CREATE_EVENTS = 1000 * 05 * 01 * 1; // 1000 * 60 * 60 * 1
 	private final CurrentData currentData;
 	private final Catalog catalog;
@@ -52,17 +52,17 @@ public class ApplicationHelper extends Thread{
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			logger.info("ℹ️ Collecting the current data and catalog");
+			System.out.println("ℹ️ Collecting the current data and catalog");
 			JSONObject data = currentData.getCurrentData();
 			JSONObject cat = catalog.getCatalog();
-			
+
 			for(String sensor : sensoren) {
 				String[] params = getParams(cat, data, sensor);
 				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
 				rdmProd.createEvent();
 			}
-			
-			logger.info(String.format("ℹ️ Raw data saved at %s",  DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now())));
+
+			System.out.println(String.format("ℹ️ Raw data saved at %s",  DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now())));
 			
 		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
 	}
@@ -105,7 +105,7 @@ private static Properties getProperties(String bootstrap_servers, String schema_
 		        break;
 		    }
 		}
-		
+
 		JSONArray data = currentData.getJSONArray("current data");
 		for (int i = 0; i < data.length(); i++) {
 			JSONObject sensorData = data.getJSONObject(i);
@@ -117,7 +117,7 @@ private static Properties getProperties(String bootstrap_servers, String schema_
 				break;
 			}
 		}
-		
+
 		return new String[] {loc, value, eenheid, Long.toString(millis)};
 	}
 	

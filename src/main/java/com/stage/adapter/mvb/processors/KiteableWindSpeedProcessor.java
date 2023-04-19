@@ -58,8 +58,8 @@ public class KiteableWindSpeedProcessor implements Processor<String, RawDataMeas
             		record.value().getWaarde(),
             		record.value().getEenheid(),
             		record.value().getTijdstip()
-            		);
-            
+			);
+
             var output = new Record<>(record.key(), kitableWindDetected, record.timestamp(), record.headers());
             context.forward(output);
         }
@@ -106,21 +106,21 @@ public class KiteableWindSpeedProcessor implements Processor<String, RawDataMeas
     public void close() {
 		// TODO Auto-generated method stub
     }
-    
-    private static boolean isRecordFirstRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
-    	return mostRecentEvent.getTijdstip() == record.value().getTijdstip();
-    }
-	
+
+	private static boolean isRecordFirstRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
+		return mostRecentEvent.getTijdstip() == record.value().getTijdstip();
+	}
+
 	private static boolean isValueOverThresholdAndIsLastValueOverThreshold(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record, double threshold) {
 		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
 	}
-	
+
 	private static boolean isValueOverThresholdAndIsLastValueLessThanThreshold(RawDataMeasured mostRecentEvent,  Record<String, RawDataMeasured> record, double threshold) {
-		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) < threshold;
-	}	
-	
+		return Double.parseDouble(record.value().getWaarde()) > threshold && Double.parseDouble(mostRecentEvent.getWaarde()) <= threshold;
+	}
+
 	private static boolean isValueLessThanThresholdAndIsLastOverThreshold(RawDataMeasured mostRecentEvent,  Record<String, RawDataMeasured> record, double threshold) {
-		return Double.parseDouble(record.value().getWaarde()) < threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
+		return Double.parseDouble(record.value().getWaarde()) <= threshold && Double.parseDouble(mostRecentEvent.getWaarde()) > threshold;
 	}
 
 }

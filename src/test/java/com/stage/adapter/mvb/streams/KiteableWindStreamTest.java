@@ -26,15 +26,14 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         this.testDriver = createTestDriver(
         		KiteableWindStream.buildTopology(
                         Set.of("S1", "S2"),
-                        5,
+                        7.717,
                         RAW_TOPIC,
                         KITABLE_WIND_DETECTED_TOPIC,
                         MergedWeatherStream.rawDataMeasuredSerde(schema_registry),
                         MergedWeatherStream.kiteableWindDetectedSerde(schema_registry),
                         MergedWeatherStream.windHasFallenOffSerde(schema_registry),
-                        serdesConfigTest(),
-                        new StreamsBuilder()
-                ).build()
+                        serdesConfigTest()
+                )
         );
     }
     

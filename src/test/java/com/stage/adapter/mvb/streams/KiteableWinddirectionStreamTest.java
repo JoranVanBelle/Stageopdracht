@@ -29,9 +29,8 @@ public class KiteableWinddirectionStreamTest extends KafkaTopologyTestBase {
     					MergedWeatherStream.rawDataMeasuredSerde(schema_registry),
     					MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry),
     					MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry),
-    					serdesConfigTest(),
-    					new StreamsBuilder()
-				).build()
+    					serdesConfigTest()
+				)
 		);
     }
     

@@ -1,14 +1,13 @@
 package com.stage.adapter.mvb.streams;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Branched;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Predicate;
@@ -23,81 +22,86 @@ import com.stage.UnkiteableWindDirectionDetected;
 import com.stage.adapter.mvb.processors.KiteableWindDirectionProcessor;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.maven.wagon.Streams;
 
-public class KiteableWinddirectionStream {
-	
-	private static final Logger logger = LogManager.getLogger(KiteableWinddirectionStream.class);
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+
+public class KiteableWinddirectionStream extends Thread {
 	
 	private static final String kvStoreName = "windDirectionStream";
-	
-//	@Override
-//	public void run() {
-//		
-//		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry);
-//		
-//		Topology topo = buildTopology(threshold, INTOPIC, WINDTOPIC, rawDataMeasuredSerde(props), kiteableWindDirectionDetectedSerde(props), unkiteableWindDirectionDetected(props), props);
-//		KafkaStreams streams = new KafkaStreams(topo, props);
-//		streams.start();
-//		logger.info("ℹ️ KiteableWindDirectionStream started");
-//		
-//		GracefulShutdown.gracefulShutdown(streams);
-//		
-//	}
-//	
-//	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(Properties envProps) {
-//		final SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde = new SpecificAvroSerde<>();
-//		Map<String, String> serdeConfig = new HashMap<>();
-//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-//		rawDataMeasuredSerde.configure(serdeConfig, false);
-//		return rawDataMeasuredSerde;
-//	}
-//
-//	public static SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde(Properties envProps) {
-//		final SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde = new SpecificAvroSerde<>();
-//		Map<String, String> serdeConfig = new HashMap<>();
-//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-//		kiteableWindDirectionDetectedSerde.configure(serdeConfig, false);
-//		return kiteableWindDirectionDetectedSerde;
-//	}
-//	
-//	public static SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected(Properties envProps) {
-//		final SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected = new SpecificAvroSerde<>();
-//		Map<String, String> serdeConfig = new HashMap<>();
-//		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-//		unkiteableWindDirectionDetected.configure(serdeConfig, false);
-//		return unkiteableWindDirectionDetected;
-//	}
-//	
-//private static Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry) {
-//		
-//		Properties settings = new Properties();
-//		// Set a few key parameters
-//		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, app_id);
-//		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
-//		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
-//		//todo add extra configuration
-//
-//		// Any further settings
-////        settings.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, Optional.ofNullable(System.getenv("QS_SECURITY_PROTOCOL")).orElse("SASL_SSL"));
-////        settings.put("sasl.jaas.config", Optional.ofNullable(System.getenv("QS_JAAS_CONFIG")).orElseThrow(() -> new IllegalArgumentException("QS_JAAS_CONFIG is required")));
-////        settings.put("ssl.endpoint.identification.algorithm", Optional.ofNullable(System.getenv("QS_ENDPOINT_ID_ALG")).orElse("https"));
-////        settings.put("sasl.mechanism", Optional.ofNullable(System.getenv("QS_SASL_MECH")).orElse("PLAIN"));
-////        settings.put("replication.factor", Optional.ofNullable(System.getenv("QS_REPLICATION")).orElse("3"));
-////        settings.put("auto.offset.reset", Optional.ofNullable(System.getenv("QS_AUTO_OFFSET_RESET")).orElse("earliest"));
-//
-//		return settings;
-//	}
 
-protected static StreamsBuilder buildTopology(Map<String, double[]> thresholds,
-								  String rawDataTopic,
-								  String kiteableWindDirectionTopic,
-								  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
-								  SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde,
-								  SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetectedSerde,
-								  Properties streamProperties,
-								  StreamsBuilder builder
+	private static final String INTOPIC = "Meetnet.meting.raw";
+	private static final String WINDTOPIC = "Meetnet.meting.wind.direction.kiteable";
+
+
+		private final Map<String, double[]> threshold  = new HashMap<>() {{
+			put("NP7WC3", new double[] {10.00, 230.00});
+		}};
+
+	private final String app_id;
+	private final String bootstrap_servers;
+	private final String schema_registry;
+
+	public KiteableWinddirectionStream(String app_id, String bootstrap_servers, String schema_registry) {
+		this.app_id = app_id;
+		this.bootstrap_servers = bootstrap_servers;
+		this.schema_registry = schema_registry;
+	}
+
+	@Override
+	public void run() {
+
+		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry);
+
+		Topology topo = buildTopology(threshold, INTOPIC, WINDTOPIC, rawDataMeasuredSerde(schema_registry), kiteableWindDirectionDetectedSerde(schema_registry), unkiteableWindDirectionDetected(schema_registry), props);
+		KafkaStreams streams = new KafkaStreams(topo, props);
+		streams.start();
+		System.out.println("ℹ️ KiteableWindDirectionStream started");
+
+	}
+
+	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(String schema_registry) {
+		final SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde = new SpecificAvroSerde<>();
+		Map<String, String> serdeConfig = new HashMap<>();
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		rawDataMeasuredSerde.configure(serdeConfig, false);
+		return rawDataMeasuredSerde;
+	}
+
+	public static SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde(String schema_registry) {
+		final SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde = new SpecificAvroSerde<>();
+		Map<String, String> serdeConfig = new HashMap<>();
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		kiteableWindDirectionDetectedSerde.configure(serdeConfig, false);
+		return kiteableWindDirectionDetectedSerde;
+	}
+
+	public static SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected(String schema_registry) {
+		final SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetected = new SpecificAvroSerde<>();
+		Map<String, String> serdeConfig = new HashMap<>();
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		unkiteableWindDirectionDetected.configure(serdeConfig, false);
+		return unkiteableWindDirectionDetected;
+	}
+
+private static Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry) {
+
+		Properties settings = new Properties();
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format("%s.wind.direction", app_id));
+		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
+		settings.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		return settings;
+	}
+
+protected static Topology buildTopology(Map<String, double[]> thresholds,
+										String rawDataTopic,
+										String kiteableWindDirectionTopic,
+										SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
+										SpecificAvroSerde<KiteableWindDirectionDetected> kiteableWindDirectionDetectedSerde,
+										SpecificAvroSerde<UnkiteableWindDirectionDetected> unkiteableWindDirectionDetectedSerde,
+										Properties streamProperties
 ){
-	
+	StreamsBuilder builder = new StreamsBuilder();
 	List<String> inScopeSensors = new ArrayList<>(thresholds.keySet());
 	
 	builder.addStateStore(
@@ -106,7 +110,7 @@ protected static StreamsBuilder buildTopology(Map<String, double[]> thresholds,
 	Serdes.String(),
 	rawDataMeasuredSerde)
 	);
-	
+
 	builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
 	.filter(onlyInScopeSensors(inScopeSensors))
 	.process(() -> new KiteableWindDirectionProcessor(kvStoreName, thresholds), kvStoreName)
@@ -114,15 +118,15 @@ protected static StreamsBuilder buildTopology(Map<String, double[]> thresholds,
 	.branch((key, value) -> isValueBinnenUpperAndLowerBound(value.getWaarde(), thresholds.get(key)[1], thresholds.get(key)[0]),
 			Branched.withConsumer(s -> s
 					.mapValues(v -> new KiteableWindDirectionDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-    				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+    				.peek((k, v) -> {System.out.printf("ℹ️ There is a kiteable winddirection detected, %s%n", v.getWaarde());})
     				.to(kiteableWindDirectionTopic, Produced.with(Serdes.String(), kiteableWindDirectionDetectedSerde))))
 	.branch((key, value) -> !isValueBinnenUpperAndLowerBound(value.getWaarde(), thresholds.get(key)[1], thresholds.get(key)[0]),
 			Branched.withConsumer(s -> s
 					.mapValues(v -> new UnkiteableWindDirectionDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-    				.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+    				.peek((k, v) -> {System.out.printf("ℹ️ There is an ukiteable winddirection detected, %s%n", v.getWaarde());})
     				.to(kiteableWindDirectionTopic, Produced.with(Serdes.String(), unkiteableWindDirectionDetectedSerde))));
 	
-	return builder;
+	return builder.build(streamProperties);
 	}
 
 	private static Predicate<String, RawDataMeasured> onlyInScopeSensors(Collection<String> inScopeSensors) {

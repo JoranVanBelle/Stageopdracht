@@ -16,14 +16,13 @@ import com.stage.RawDataMeasured;
 public class RawDataInfrastructureTest {
 
 	private RawDataInfrastructure rawDataInfrastructure;
-	private String TOPIC = "testTopic";
+	private String TOPIC = "Meetnet.meting.raw";
 	private KafkaProducer<String, RawDataMeasured> mockProducer = Mockito.mock(KafkaProducer.class);
 	private Properties mockProps;
 	
 	@BeforeEach
 	public void setup() {
 		rawDataInfrastructure = new RawDataInfrastructure(
-		TOPIC,
 		mockProducer,
 		mockProps
 		);

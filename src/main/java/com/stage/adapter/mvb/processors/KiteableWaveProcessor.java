@@ -43,7 +43,6 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
             		record.value().getEenheid(),
             		record.value().getTijdstip()
             		);
-            
             var output = new Record<>(record.key(), firstValue, record.timestamp(), record.headers());
             context.forward(output);
         	return;
@@ -57,9 +56,10 @@ public class KiteableWaveProcessor implements Processor<String, RawDataMeasured,
             		record.value().getEenheid(),
             		record.value().getTijdstip()
             		);
-            
+
             var output = new Record<>(record.key(), kitableWindDetected, record.timestamp(), record.headers());
             context.forward(output);
+			return;
         }
         
         if (isValueOverThresholdAndIsLastValueOverThreshold(mostRecentEvent, record, threshold)) {

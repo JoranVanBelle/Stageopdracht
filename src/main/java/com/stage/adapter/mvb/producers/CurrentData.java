@@ -49,9 +49,9 @@ public class CurrentData extends Thread {
 		scheduler.scheduleAtFixedRate(() -> {
 			String token = Bearertoken.getBearerToken(api, username, password);
 			String response = fetchApi(String.format("%s/V2/currentData", api), token);
-			logger.info("ℹ️ Current data retrieved");
+			System.out.println("ℹ️ Current data retrieved");
 			setCurrentData(response);
-			
+
 		}, 0, FETCH_API, TimeUnit.MILLISECONDS);
 	}
 	

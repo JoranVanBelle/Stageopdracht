@@ -82,6 +82,11 @@ public class KiteableWeatherConsumer extends Thread {
 		logger.info("ℹ️ Consumer will start writing to the database");
 		
 		while(true) {
+			try {
+				Thread.sleep(3000);
+			} catch(Exception e ){
+				e.printStackTrace();
+			}
 			consume(jdbcTemplate);
 		}
 	}

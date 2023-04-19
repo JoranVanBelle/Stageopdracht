@@ -2,6 +2,7 @@ package com.stage.adapter.mvb;
 
 import java.util.Properties;
 
+import com.stage.adapter.mvb.streams.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -12,7 +13,6 @@ import com.stage.adapter.mvb.consumers.KiteableWeatherConsumer;
 import com.stage.adapter.mvb.helpers.ApplicationHelper;
 import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.producers.CurrentData;
-import com.stage.adapter.mvb.streams.MergedWeatherStream;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
@@ -41,7 +41,7 @@ public class Application {
 		Application.database_password = System.getenv("DATABASE_PASSWORD");
 		Application.username = System.getenv("USERNAME");
 		Application.password = System.getenv("PASSWORD");
-		Application.app_id = System.getenv("app_id");
+		Application.app_id = System.getenv("APP_ID");
 		Application.bootstrap_servers = System.getenv("BOOTSTRAP_SERVERS");
 		Application.schema_registry = System.getenv("SCHEMA_REGISTRY_URL");
 	}
@@ -72,13 +72,19 @@ public class Application {
 		KiteableWeatherConsumer consumer = new KiteableWeatherConsumer(getProperties(), database_url, database_user,
 				database_password);
 
-		MergedWeatherStream stream = new MergedWeatherStream(app_id, bootstrap_servers, schema_registry);
+		KiteableWaveStream waveStream = new KiteableWaveStream(app_id, bootstrap_servers, schema_registry);
+		KiteableWindStream windspeedStream = new KiteableWindStream(app_id, bootstrap_servers, schema_registry);
+		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream(app_id, bootstrap_servers, schema_registry);
+		KiteableWeatherStream weatherStream = new KiteableWeatherStream(app_id, bootstrap_servers, schema_registry);
 
 		Thread currentDataThread = new Thread(currentData);
 		Thread catalogThread = new Thread(catalog);
 		Thread comsumerThread = new Thread(consumer);
 
-		Thread streamThread = new Thread(stream);
+		Thread waveStreamThread = new Thread(waveStream);
+		Thread windspeedStreamThread = new Thread(windspeedStream);
+		Thread winddirectionStreamThread = new Thread(winddirectionStream);
+		Thread weatherStreamThread = new Thread(weatherStream);
 
 		currentDataThread.start();
 		catalogThread.start();
@@ -86,10 +92,10 @@ public class Application {
 		int timeOutException = 1;
 		while (currentData.getCurrentDataString() == null || catalog.getCatalogString() == null) {
 			if (currentData.getCurrentDataString() == null) {
-				logger.info(String.format("ℹ️ retrieving current data - try: %d", timeOutException));
+				System.out.println(String.format("ℹ️ retrieving current data - try: %d", timeOutException));
 			}
 			if (catalog.getCatalogString() == null) {
-				logger.info(String.format("ℹ️ Retrieving catalog - try: %d", timeOutException));
+				System.out.println(String.format("ℹ️ Retrieving catalog - try: %d", timeOutException));
 			}
 
 			try {
@@ -105,24 +111,26 @@ public class Application {
 			}
 
 		}
-		;
 
 		ApplicationHelper applicationHelper = new ApplicationHelper(currentData, catalog, bootstrap_servers,
 				schema_registry);
 		Thread applicationHelperThread = new Thread(applicationHelper);
 
 		applicationHelperThread.start();
-		streamThread.start();
-		comsumerThread.start();
+		waveStreamThread.start();
+		windspeedStreamThread.start();
+		winddirectionStreamThread.start();
+		weatherStreamThread.start();
+//		comsumerThread.start();
 	}
 
 	private static Properties getProperties() {
 
 		final Properties props = new Properties();
 
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
 		props.put(ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, 0);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "MVB_consumer");
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, app_id);
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
