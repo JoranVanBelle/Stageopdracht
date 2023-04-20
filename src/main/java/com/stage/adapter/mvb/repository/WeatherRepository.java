@@ -1,6 +1,8 @@
 package com.stage.adapter.mvb.repository;
 
 import org.apache.avro.generic.GenericRecord;
+import org.postgresql.util.PSQLException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -24,12 +26,17 @@ public class WeatherRepository {
 		paramSource.addValue("Winddirection", value.get("Windrichting").toString());
 		paramSource.addValue("WinddirectionUnit", value.get("EenheidWindrichting").toString());
 		paramSource.addValue("Timestamp", Long.parseLong(value.get("Tijdstip").toString()));
-		
-		int rowsAffected = jdbcTemplate.update(
-				"INSERT INTO Kiten(DataID, Loc, Windspeed, WindspeedUnit, waveheight, waveheightUnit, winddirection, winddirectionUnit, TimestampMeasurment)"
-				+ "VALUES (:DataID, :Location, :Windspeed, :WindspeedUnit, :Waveheight, :WaveheightUnit, :Winddirection, :WinddirectionUnit, :Timestamp)"
-				, paramSource);
-		
-		return rowsAffected;
+
+		try {
+			int rowsAffected = jdbcTemplate.update(
+					"INSERT INTO Kiten(DataID, Loc, Windspeed, WindspeedUnit, waveheight, waveheightUnit, winddirection, winddirectionUnit, TimestampMeasurment)"
+							+ " VALUES (:DataID, :Location, :Windspeed, :WindspeedUnit, :Waveheight, :WaveheightUnit, :Winddirection, :WinddirectionUnit, :Timestamp)"
+					, paramSource);
+
+			System.out.println("ℹ️ weather inserted into database");
+			return rowsAffected;
+		} catch(DuplicateKeyException e) {
+			return 0;
+		}
 	}
 }

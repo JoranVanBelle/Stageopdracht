@@ -31,7 +31,7 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	private Database database;
 	private NamedParameterJdbcTemplate jdbcTemplate;
-	private Consumer<String, GenericRecord> consumer;
+	public Consumer<String, GenericRecord> consumer;
 	private final WeatherService weatherService;
 	private final EmailService emailService;
 	
@@ -39,12 +39,12 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	private static final Logger logger = LogManager.getLogger(KiteableWeatherConsumer.class);
 	
-	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password) {
+	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password, String host, int port) {
 		this.consumer = new KafkaConsumer<>(props);
 		this.database = new Database();
 		this.jdbcTemplate = new NamedParameterJdbcTemplate(database.getPGPoolingDataSource(database_url, database_user, database_password));
 		this.weatherService = new WeatherService(jdbcTemplate);
-		this.emailService = new EmailService(jdbcTemplate);
+		this.emailService = new EmailService(jdbcTemplate, host, port);
 	}
 	
 	// Test purpose
@@ -65,7 +65,7 @@ public class KiteableWeatherConsumer extends Thread {
 	@Override
 	public void run() {
 		try {		
-			writeToDatabase(this.jdbcTemplate);
+			writeToDatabase();
 			
 		} catch (MailException e) {
 			e.printStackTrace();
@@ -76,7 +76,7 @@ public class KiteableWeatherConsumer extends Thread {
         } 
 	}
 	
-	public void writeToDatabase(NamedParameterJdbcTemplate jdbcTemplate) throws MailException, SQLException {	
+	public void writeToDatabase() throws MailException, SQLException {
 		consumer.subscribe(Arrays.asList(TOPIC));
 		
 		logger.info("ℹ️ Consumer will start writing to the database");
@@ -87,11 +87,11 @@ public class KiteableWeatherConsumer extends Thread {
 			} catch(Exception e ){
 				e.printStackTrace();
 			}
-			consume(jdbcTemplate);
+			consume();
 		}
 	}
 	
-	public void consume(NamedParameterJdbcTemplate jdbcTemplate) {
+	public void consume() {
 		ConsumerRecords<String, GenericRecord> records = consumer.poll(Duration.ofMillis(100));
 		for(ConsumerRecord<String, GenericRecord> record : records) {
 			GenericRecord value = record.value();

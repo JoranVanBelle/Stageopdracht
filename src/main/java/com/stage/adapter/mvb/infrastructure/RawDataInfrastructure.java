@@ -24,8 +24,7 @@ public class RawDataInfrastructure {
 	
 	//Testpurpose
 	public RawDataInfrastructure(
-			KafkaProducer<String, RawDataMeasured> producer,
-			Properties props
+			KafkaProducer<String, RawDataMeasured> producer
 	) {
 		this.producer = producer;
 	}

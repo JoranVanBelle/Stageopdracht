@@ -90,7 +90,7 @@ public class KiteableWaveStream extends Thread {
 	}
 	
 	protected static Topology buildTopology(Collection<String> inScopeSensors,
-										  double windspeedTreshhold,
+										  double waveTreshhold,
 										  String rawDataTopic,
 										  String kiteableWaveTopic,
 										  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
@@ -110,17 +110,17 @@ public class KiteableWaveStream extends Thread {
 			
 		builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
 			.filter(onlyInScopeSensors(inScopeSensors))
-			.process(() -> new KiteableWaveProcessor(kvStoreName, windspeedTreshhold), kvStoreName)
+			.process(() -> new KiteableWaveProcessor(kvStoreName, waveTreshhold), kvStoreName)
 			.split()
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > windspeedTreshhold,
+			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new KiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k,v) -> {System.out.println("ℹ️ There is a kiteable wave detected");})
+							.peek((k,v) -> {System.out.printf("ℹ️ There is a kiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), kiteableWaveDetectedSerde))))
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= windspeedTreshhold,
+			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new UnkiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k, v) -> {System.out.println("ℹ️ There is an unkiteable wave detected");})
+							.peek((k, v) -> {System.out.printf("ℹ️ There is an unkiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), unkiteableWaveDetectedSerde))));
 		
 			

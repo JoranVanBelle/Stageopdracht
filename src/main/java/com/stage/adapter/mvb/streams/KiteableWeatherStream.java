@@ -1,8 +1,10 @@
 package com.stage.adapter.mvb.streams;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.stage.*;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
@@ -22,11 +24,13 @@ import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class KiteableWeatherStream extends Thread {
-	
+
+	private static String sensorID;
+
 	private static final String kvStoreNameKiteable = "kiteableWeatherStream";
 	private static final String kvStoreNameUnkiteable = "unkiteableWeatherStream";
 
-	private static final String WINDSPEEDTOPIC = "Meetnet.meting.wind.direction.kiteable";
+	private static final String WINDSPEEDTOPIC = "Meetnet.meting.wind.speed.kiteable";
 	private static final String WAVETOPIC = "Meetnet.meting.wave.kiteable";
 	private static final String WINDDIRECTIONTOPIC = "Meetnet.meting.wind.direction.kiteable";
 	private static final String OUTTOPIC = "Meetnet.meting.kiteable";
@@ -35,7 +39,7 @@ public class KiteableWeatherStream extends Thread {
 	private final String bootstrap_servers;
 	private final String schema_registry;
 
-	public KiteableWeatherStream(String app_id, String bootstrap_servers, String schema_registry ){
+	public 	KiteableWeatherStream(String app_id, String bootstrap_servers, String schema_registry ){
 		this.app_id = app_id;
 		this.bootstrap_servers = bootstrap_servers;
 		this.schema_registry = schema_registry;
@@ -43,6 +47,7 @@ public class KiteableWeatherStream extends Thread {
 
 	@Override
 	public void run() {
+
 		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry);
 
 		Topology topology = buildTopology(
@@ -144,7 +149,7 @@ public class KiteableWeatherStream extends Thread {
 		unkiteableWindDirectionDetected.configure(serdeConfig, false);
 		return unkiteableWindDirectionDetected;
 	}
-	
+
 	protected static Topology buildTopology(
 			String windSpeedTopic,
 			String waveHeightTopic,
@@ -164,62 +169,28 @@ public class KiteableWeatherStream extends Thread {
 						Serdes.String(),
 						kiteableWeatherDetectedSerde)
 		);
-		
+
 		builder.addStateStore(
 				Stores.keyValueStoreBuilder(
 						Stores.persistentKeyValueStore(kvStoreNameUnkiteable),
 						Serdes.String(),
 						noKiteableWeatherDetectedSerde)
 		);
-		
-		var kiteableWindSpeedStream = builder.stream(windSpeedTopic, Consumed.with(Serdes.String(), recordSerde));
-		var kiteableWaveHeightStream = builder.stream(waveHeightTopic, Consumed.with(Serdes.String(), recordSerde));
-		var kiteableWindDirectionStream = builder.stream(windDirectionTopic, Consumed.with(Serdes.String(), recordSerde));
 
-		String location = null;	// Will be chosen based on the sensors
-		
-		// I'm stuck here - Is it because I call the same processor over and over
-		kiteableWindSpeedStream
-			.merge(kiteableWaveHeightStream)
-			.merge(kiteableWindDirectionStream)
-//			.peek((k,v) -> System.out.print(String.format("Before processing -> key: %s, value: %s%n", k, v.getSchema().getName())))
-			.process(() -> new KiteableWeatherReconProcessor(kvStoreNameKiteable, kvStoreNameUnkiteable, getLocation("NP7WC3")), kvStoreNameKiteable, kvStoreNameUnkiteable)
-			.split()
-			.branch((k,v) -> v.getSchema().getName().toString().startsWith("Kiteable"),
-					Branched.withConsumer(s -> s
-							.mapValues(v -> new KiteableWeatherDetected(String.format("%s%d",v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
-							.peek((k,v) -> System.out.println("ℹ️ There is kiteable weather detected"))
-							.to(outtopic, Produced.with(Serdes.String(), kiteableWeatherDetectedSerde))
-							))
-			.branch((k,v) -> v.getSchema().getName().startsWith("NoKiteable"),
-					Branched.withConsumer(s -> s
-							.mapValues(v -> new NoKiteableWeatherDetected(String.format("%s%d",v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
-							.peek((k,v) -> System.out.println("ℹ️ There is unkiteable weather detected"))
-							.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
-							));
-//			.defaultBranch(Branched.withConsumer(s -> s
-//					.mapValues(v -> new NoKiteableWeatherDetected(v.get("DataID").toString(), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
-//					.peek((k,v) -> System.out.print(String.format("Unkiteable branch -> key: %s, value: %s%n", k, v)))
-//					.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
-//					));
-		
+		builder.stream(Arrays.asList(windSpeedTopic, waveHeightTopic, windDirectionTopic), Consumed.with(Serdes.String(), recordSerde))
+				.process(() -> new KiteableWeatherReconProcessor(kvStoreNameKiteable, kvStoreNameUnkiteable), kvStoreNameKiteable, kvStoreNameUnkiteable)
+				.split()
+				.branch((k, v) -> v.getSchema().getName().toString().startsWith("Kiteable"),
+						Branched.withConsumer(s -> s
+								.mapValues(v -> new KiteableWeatherDetected(String.format("%s%d", v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+								.to(outtopic, Produced.with(Serdes.String(), kiteableWeatherDetectedSerde))
+						))
+				.branch((k, v) -> v.getSchema().getName().startsWith("NoKiteable"),
+						Branched.withConsumer(s -> s
+								.mapValues(v -> new NoKiteableWeatherDetected(String.format("%s%d", v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+								.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
+						));
+
 		return builder.build();
-	}
-	
-	private static String getLocation(String sensorID) {
-		
-		String sensorLocation = sensorID.substring(0, Math.min(sensorID.length(), 3));
-		String sensorType = sensorID.substring(sensorID.length() - 3);
-		
-//		switch(sensorLocation) {
-//		case "NPB":
-//			return "Nieuwpoort";
-//		case "NP7":
-//			return "Nieuwpoort";
-//		default:
-//			return "No location found";
-//		}
-		
-		return "Nieuwpoort";
 	}
 }

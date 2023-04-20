@@ -33,8 +33,6 @@ public class ApplicationHelper extends Thread{
 	private final Catalog catalog;
 	private final String bootstrap_servers;
 	private final String schema_registry;
-
-	private static final Logger logger = LogManager.getLogger(Application.class);
 	
 	public ApplicationHelper(
 			CurrentData currentData, 

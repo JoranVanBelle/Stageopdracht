@@ -20,10 +20,10 @@ public class EmailRepository {
 	public List<Emailaddress> collectEmailAddresses(String location) {
 		
 		List<Emailaddress> emailaddresses = new ArrayList<>();
-		
+
 		MapSqlParameterSource paramSource = new MapSqlParameterSource();
 		paramSource.addValue("location", location);
-		List<Map<String, Object>> emailaddressList = jdbcTemplate.queryForList("SELECT * FROM :location;", paramSource);
+		List<Map<String, Object>> emailaddressList = jdbcTemplate.queryForList("SELECT * FROM keepUpdated WHERE location = :location;", paramSource);
 		
 		for(Map<String, Object> email : emailaddressList) {
 			emailaddresses.add(createEmailObject(email));

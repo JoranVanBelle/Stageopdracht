@@ -68,7 +68,7 @@ public class KiteableWeatherConsumerTest {
 		Mockito.doNothing().when(mockEmailService).sendEmail(weather);
 		Mockito.doNothing().when(mockWeatherService).insertDataIntoDatabase(weather);
 		
-		Assertions.assertDoesNotThrow(() -> kiteableWeatherConsumer.consume(mockJdbcTemplate));
+		Assertions.assertDoesNotThrow(() -> kiteableWeatherConsumer.consume());
 		Mockito.verify(mockEmailService, Mockito.times(1)).sendEmail(weather);
 		Mockito.verify(mockWeatherService, Mockito.times(1)).insertDataIntoDatabase(weather);
 	}
@@ -93,7 +93,7 @@ public class KiteableWeatherConsumerTest {
 		Mockito.doNothing().when(mockEmailService).sendEmail(null);
 		Mockito.doNothing().when(mockWeatherService).insertDataIntoDatabase(weather);
 		
-		Assertions.assertDoesNotThrow(() -> kiteableWeatherConsumer.consume(mockJdbcTemplate));
+		Assertions.assertDoesNotThrow(() -> kiteableWeatherConsumer.consume());
 		Mockito.verify(mockEmailService, Mockito.times(0)).sendEmail(null);
 		Mockito.verify(mockWeatherService, Mockito.times(1)).insertDataIntoDatabase(weather);
 	}
@@ -115,7 +115,7 @@ public class KiteableWeatherConsumerTest {
 		Mockito.doNothing().when(mockEmailService).sendEmail(null);
 		Mockito.doNothing().when(mockWeatherService).insertDataIntoDatabase(weather);
 		
-		Assertions.assertThrows(IllegalArgumentException.class, () -> kiteableWeatherConsumer.consume(mockJdbcTemplate));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> kiteableWeatherConsumer.consume());
 	}
 
 }

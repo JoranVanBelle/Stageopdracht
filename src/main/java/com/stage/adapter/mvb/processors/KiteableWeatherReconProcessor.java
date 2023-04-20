@@ -3,21 +3,13 @@ package com.stage.adapter.mvb.processors;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.stage.*;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.specific.SpecificData;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
-
-import com.stage.KiteableWaveDetected;
-import com.stage.KiteableWeatherDetected;
-import com.stage.KiteableWindDetected;
-import com.stage.KiteableWindDirectionDetected;
-import com.stage.NoKiteableWeatherDetected;
-import com.stage.UnkiteableWaveDetected;
-import com.stage.UnkiteableWindDetected;
-import com.stage.UnkiteableWindDirectionDetected;
 
 public class KiteableWeatherReconProcessor implements Processor<String, GenericRecord, String, GenericRecord> {
 	
@@ -27,17 +19,13 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 	
 	private String kvStoreNameKiteable;
 	private String kvStoreNameUnkiteable;
-	private String location;
 	private String kiteableKeyName;
 	private String unkiteableKeyName;
 	
 	
-	public KiteableWeatherReconProcessor(String kvStoreNameKiteable, String kvStoreNameUnkiteabe, String location) {
+	public KiteableWeatherReconProcessor(String kvStoreNameKiteable, String kvStoreNameUnkiteabe) {
 		this.kvStoreNameKiteable = kvStoreNameKiteable;
 		this.kvStoreNameUnkiteable = kvStoreNameUnkiteabe;
-		this.location = location;
-		this.kiteableKeyName = String.format("%sKiteable", location);
-		this.unkiteableKeyName = String.format("%sUnkiteable", location);
 	}
 	
 	@Override
@@ -51,7 +39,13 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 	
 	@Override
 	public void process(Record<String, GenericRecord> record) {
-		
+
+		String location = getLocation(record.value().get("SensorID").toString());
+
+		System.err.println(location);
+		this.kiteableKeyName = String.format("%sKiteable", location);
+		this.unkiteableKeyName = String.format("%sUnkiteable", location);
+
 		KiteableWeatherDetected mostRecentKiteableEvent = stateStoreKiteable.get(kiteableKeyName);
 		NoKiteableWeatherDetected mostRecentUnkiteableEvent = stateStoreUnkiteable.get(unkiteableKeyName);
 		
@@ -69,8 +63,9 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 					.setLocatie(location)
 					.build();
 		}
-		
+
 		if(schemaStartsWithKiteable(record)) {
+
 			var kiteable = updateKiteableWeatherEventsAndReturnUpdatedEvent(record, mostRecentKiteableEvent, mostRecentUnkiteableEvent);
 			var unkiteable = enterValuesInUnkiteable(record, mostRecentUnkiteableEvent);
 			
@@ -85,9 +80,12 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 				var output = new Record<>(String.format("%s%d", unkiteableKeyName, unkiteable.getTijdstip()), unkiteable, record.timestamp(), record.headers());
 				context.forward(output);
 				return;
+			} else {
+				return;
 			}
 			
 		} else {
+
 			var list = updateUnkiteableWeatherEventsAndReturnUpdatedEvent(record, mostRecentKiteableEvent, mostRecentUnkiteableEvent);
 			
 			var unkiteable = (NoKiteableWeatherDetected) list.get(0);
@@ -96,7 +94,7 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 			stateStoreUnkiteable.put(unkiteableKeyName, unkiteable);
 			stateStoreKiteable.put(kiteableKeyName, kiteable);
 			
-			if(allUnkiteableFieldAreFilledIn(unkiteable)) {
+			if(allUnkiteableFieldAreFilledIn(unkiteable) && unkiteableRecordIsUpdated(record.value(), unkiteable)) {
 				var output = new Record<>(String.format("%s%d", unkiteableKeyName, unkiteable.getTijdstip()), unkiteable, record.timestamp(), record.headers());
 				context.forward(output);
 			}
@@ -114,9 +112,17 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 	private static boolean allKiteableFieldAreFilledIn(KiteableWeatherDetected event) {
 		return !event.getWindsnelheid().equals("") && !event.getGolfhoogte().equals("") && !event.getWindrichting().equals("");
 	}
+
+	private static boolean kiteableRecordIsUpdated(GenericRecord record, KiteableWeatherDetected kiteable) {
+		return (long) record.get("Tijdstip") != kiteable.getTijdstip();
+	}
 	
 	private static boolean allUnkiteableFieldAreFilledIn(NoKiteableWeatherDetected event) {
 		return !event.getWindsnelheid().equals("") && !event.getGolfhoogte().equals("") && !event.getWindrichting().equals("");
+	}
+
+	private static boolean unkiteableRecordIsUpdated(GenericRecord record, NoKiteableWeatherDetected unkiteable) {
+		return (long) record.get("Tijdstip") != unkiteable.getTijdstip();
 	}
 	
 	private static boolean schemaStartsWithKiteable(Record<String, GenericRecord> record) {
@@ -277,5 +283,27 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 		
 		return mostRecentUnkiteableEvent;
 	}
-	
+
+	private static boolean isKiteableRecordFirstRecordInStateStore(KiteableWeatherDetected mostRecentEvent, Record<String, GenericRecord> record) {
+		return mostRecentEvent.getTijdstip() == (long) record.value().get("Tijdstip");
+	}
+
+	private static boolean isUnkiteableRecordFirstRecordInStateStore(NoKiteableWeatherDetected mostRecentEvent, Record<String, GenericRecord> record) {
+		return mostRecentEvent.getTijdstip() == (long) record.value().get("Tijdstip");
+	}
+
+	private static String getLocation(String sensorID) {
+
+		String sensorLocation = sensorID.substring(0, Math.min(sensorID.length(), 3));
+		String sensorType = sensorID.substring(sensorID.length() - 3);
+
+		switch(sensorLocation) {
+			case "NPB":
+				return "Nieuwpoort";
+			case "NP7":
+				return "Nieuwpoort";
+			default:
+				return "No location found";
+		}
+	}
 }

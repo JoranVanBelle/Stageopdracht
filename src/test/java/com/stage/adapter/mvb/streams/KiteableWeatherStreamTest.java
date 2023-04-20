@@ -128,7 +128,7 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 		
 		var eventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 		
-		Assertions.assertEquals(5, eventList.size());
+		Assertions.assertEquals(4, eventList.size());
 		
 	}
 	

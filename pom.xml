@@ -21,7 +21,7 @@
         <kafka.version>3.4.0</kafka.version>
         <log4j.version>2.19.0</log4j.version>
         <slf4j.version>2.0.5</slf4j.version>
-		<java.version>19</java.version>
+		<java.version>17</java.version>
 	</properties>
 
     <dependencyManagement>
@@ -173,10 +173,6 @@
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-core</artifactId>
 		</dependency>
-		<dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
         
 	</dependencies>
 

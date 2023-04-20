@@ -15,8 +15,8 @@ public class EmailService {
 	private final EmailInfrastructure emailInfrastructure;
 	private final EmailRepository emailRepository;
 	
-	public EmailService(NamedParameterJdbcTemplate jdbcTemplate) {
-		this.emailInfrastructure = new EmailInfrastructure();
+	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port) {
+		this.emailInfrastructure = new EmailInfrastructure(host, port);
 		this.emailRepository = new EmailRepository(jdbcTemplate);
 	}
 	

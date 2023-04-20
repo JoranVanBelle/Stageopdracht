@@ -2,6 +2,7 @@ package com.stage.adapter.mvb;
 
 import java.util.Properties;
 
+import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.streams.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
@@ -11,7 +12,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.stage.adapter.mvb.consumers.KiteableWeatherConsumer;
 import com.stage.adapter.mvb.helpers.ApplicationHelper;
-import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.producers.CurrentData;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
@@ -22,8 +22,6 @@ public class Application {
 //	private static final String[] sensoren = {"A2BGHA", "WDLGHA", "RA2GHA", "OSNGHA", "NPBGHA", "SWIGHA",
 //	"MP0WC3", "MP7WC3", "NP7WC3", "MP0WVC", "MP7WVC", "NP7WVC", "A2BRHF", "RA2RHF", "OSNRHF"};
 
-	private static final Logger logger = LogManager.getLogger(Application.class);
-
 	private static String api;
 	private static String database_url;
 	private static String database_user;
@@ -33,6 +31,8 @@ public class Application {
 	private static String app_id;
 	private static String bootstrap_servers;
 	private static String schema_registry;
+	private static String emailHost;
+	private static int emailPort;
 
 	public static void setup() {
 		Application.api = System.getenv("API");
@@ -44,10 +44,12 @@ public class Application {
 		Application.app_id = System.getenv("APP_ID");
 		Application.bootstrap_servers = System.getenv("BOOTSTRAP_SERVERS");
 		Application.schema_registry = System.getenv("SCHEMA_REGISTRY_URL");
+		Application.emailHost = "mailhog";
+		Application.emailPort = 1025;
 	}
 
 	public static void setup(String api, String database_url, String database_user, String database_password, String username,
-			String password, String app_id, String bootstrap_servers, String schema_registry) {
+							 String password, String app_id, String bootstrap_servers, String schema_registry, String emailHost, int emailPort) {
 		Application.api = api;
 		Application.database_url = database_url;
 		Application.database_user = database_user;
@@ -57,10 +59,11 @@ public class Application {
 		Application.app_id = app_id;
 		Application.bootstrap_servers = bootstrap_servers;
 		Application.schema_registry = schema_registry;
+		Application.emailHost = emailHost;
+		Application.emailPort = emailPort;
 	}
 
 	public static void main(String[] args) {
-//		Configurator.initialize(null, "src/main/resources/log4j2.xml");
 		setup();
 		startApp();
 	}
@@ -70,7 +73,7 @@ public class Application {
 		CurrentData currentData = new CurrentData(api, username, password);
 		Catalog catalog = new Catalog(api, username, password);
 		KiteableWeatherConsumer consumer = new KiteableWeatherConsumer(getProperties(), database_url, database_user,
-				database_password);
+				database_password, emailHost, emailPort);
 
 		KiteableWaveStream waveStream = new KiteableWaveStream(app_id, bootstrap_servers, schema_registry);
 		KiteableWindStream windspeedStream = new KiteableWindStream(app_id, bootstrap_servers, schema_registry);
@@ -106,7 +109,7 @@ public class Application {
 				timeOutException++;
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				logger.error("❌ ", e);
+				System.err.printf("❌ %s", e);
 				throw new ResourceNotFoundException("URL not found");
 			}
 
@@ -120,12 +123,16 @@ public class Application {
 		waveStreamThread.start();
 		windspeedStreamThread.start();
 		winddirectionStreamThread.start();
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 		weatherStreamThread.start();
-//		comsumerThread.start();
+		comsumerThread.start();
 	}
 
-	private static Properties getProperties() {
-
+	public static Properties getProperties() {
 		final Properties props = new Properties();
 
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
