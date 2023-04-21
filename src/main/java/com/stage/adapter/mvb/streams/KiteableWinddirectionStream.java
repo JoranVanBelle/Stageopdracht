@@ -123,7 +123,7 @@ protected static Topology buildTopology(Map<String, double[]> thresholds,
 	.branch((key, value) -> !isValueBinnenUpperAndLowerBound(value.getWaarde(), thresholds.get(key)[1], thresholds.get(key)[0]),
 			Branched.withConsumer(s -> s
 					.mapValues(v -> new UnkiteableWindDirectionDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-    				.peek((k, v) -> {System.out.printf("ℹ️ There is an ukiteable winddirection detected: %s%n", v.getWaarde());})
+    				.peek((k, v) -> {System.out.printf("ℹ️ There is an unkiteable winddirection detected: %s%n", v.getWaarde());})
     				.to(kiteableWindDirectionTopic, Produced.with(Serdes.String(), unkiteableWindDirectionDetectedSerde))));
 	
 	return builder.build(streamProperties);

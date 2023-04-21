@@ -21,6 +21,8 @@ public class Application {
 
 //	private static final String[] sensoren = {"A2BGHA", "WDLGHA", "RA2GHA", "OSNGHA", "NPBGHA", "SWIGHA",
 //	"MP0WC3", "MP7WC3", "NP7WC3", "MP0WVC", "MP7WVC", "NP7WVC", "A2BRHF", "RA2RHF", "OSNRHF"};
+// TODO - remove line below
+	// API=https://api.meetnetvlaamsebanken.be/;APP_ID=adapter.mvb;BOOTSTRAP_SERVERS=http://localhost:9092;DATABASE_PASSWORD=admin;DATABASE_URL=jdbc:postgresql://localhost:5432/Stageopdracht;DATABASE_USER=user;PASSWORD=LMsQ%!fVp3DmrYe76Z*H;SCHEMA_REGISTRY_URL=http://localhost:8081;USERNAME=joran.vanbelle2@student.hogent.be
 
 	private static String api;
 	private static String database_url;
@@ -33,6 +35,8 @@ public class Application {
 	private static String schema_registry;
 	private static String emailHost;
 	private static int emailPort;
+	private static String email_username;
+	private static String email_password;
 
 	public static void setup() {
 		Application.api = System.getenv("API");
@@ -46,10 +50,12 @@ public class Application {
 		Application.schema_registry = System.getenv("SCHEMA_REGISTRY_URL");
 		Application.emailHost = "mailhog";
 		Application.emailPort = 1025;
+		Application.email_username = "joran.vanbelle2@student.hogent.be";
+		Application.email_password = "e&FK@G82a$SE%8^rke77";
 	}
 
 	public static void setup(String api, String database_url, String database_user, String database_password, String username,
-							 String password, String app_id, String bootstrap_servers, String schema_registry, String emailHost, int emailPort) {
+							 String password, String app_id, String bootstrap_servers, String schema_registry, String emailHost, int emailPort, String email_username, String email_password) {
 		Application.api = api;
 		Application.database_url = database_url;
 		Application.database_user = database_user;
@@ -61,6 +67,8 @@ public class Application {
 		Application.schema_registry = schema_registry;
 		Application.emailHost = emailHost;
 		Application.emailPort = emailPort;
+		Application.email_username = email_username;
+		Application.email_password = email_password;
 	}
 
 	public static void main(String[] args) {
@@ -73,7 +81,7 @@ public class Application {
 		CurrentData currentData = new CurrentData(api, username, password);
 		Catalog catalog = new Catalog(api, username, password);
 		KiteableWeatherConsumer consumer = new KiteableWeatherConsumer(getProperties(), database_url, database_user,
-				database_password, emailHost, emailPort);
+				database_password, emailHost, emailPort, email_username, email_password);
 
 		KiteableWaveStream waveStream = new KiteableWaveStream(app_id, bootstrap_servers, schema_registry);
 		KiteableWindStream windspeedStream = new KiteableWindStream(app_id, bootstrap_servers, schema_registry);
@@ -95,10 +103,10 @@ public class Application {
 		int timeOutException = 1;
 		while (currentData.getCurrentDataString() == null || catalog.getCatalogString() == null) {
 			if (currentData.getCurrentDataString() == null) {
-				System.out.println(String.format("ℹ️ retrieving current data - try: %d", timeOutException));
+				System.out.println(String.format("ℹ️ retrieving current data - try: %d/15", timeOutException));
 			}
 			if (catalog.getCatalogString() == null) {
-				System.out.println(String.format("ℹ️ Retrieving catalog - try: %d", timeOutException));
+				System.out.println(String.format("ℹ️ Retrieving catalog - try: %d/15", timeOutException));
 			}
 
 			try {

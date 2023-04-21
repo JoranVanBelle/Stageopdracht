@@ -21,6 +21,7 @@
         <kafka.version>3.4.0</kafka.version>
         <log4j.version>2.19.0</log4j.version>
         <slf4j.version>2.0.5</slf4j.version>
+		<greenmail.version>2.0.0</greenmail.version>
 		<java.version>17</java.version>
 	</properties>
 
@@ -88,10 +89,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 		<dependency>
@@ -143,22 +140,22 @@
 		    <scope>test</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.testcontainers</groupId>
-		    <artifactId>kafka</artifactId>
-		    <version>1.18.0</version>
-		    <scope>test</scope>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>kafka</artifactId>
+			<version>1.18.0</version>
+			<scope>test</scope>
 		</dependency>
-		
+
 		<!-- Other dependencies -->
 		<dependency>
 		  <groupId>com.zaxxer</groupId>
 		  <artifactId>HikariCP</artifactId>
 		</dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.14.2</version>
+		</dependency>
         <dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
@@ -173,7 +170,24 @@
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-core</artifactId>
 		</dependency>
-        
+		<dependency>
+			<groupId>com.sun.mail</groupId>
+			<artifactId>jakarta.mail</artifactId>
+			<version>2.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.angus</groupId>
+			<artifactId>imap</artifactId>
+			<version>2.0.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.icegreen</groupId>
+			<artifactId>greenmail</artifactId>
+			<version>2.1.0-alpha-1</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>

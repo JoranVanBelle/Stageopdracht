@@ -15,11 +15,11 @@ public class EmailService {
 	private final EmailInfrastructure emailInfrastructure;
 	private final EmailRepository emailRepository;
 	
-	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port) {
-		this.emailInfrastructure = new EmailInfrastructure(host, port);
+	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port, String email_username, String email_password) {
+		this.emailInfrastructure = new EmailInfrastructure(host, port, email_username, email_password);
 		this.emailRepository = new EmailRepository(jdbcTemplate);
 	}
-	
+
 	//Testpurposes
 	public EmailService(
 			EmailInfrastructure emailInfrastructure,
@@ -27,6 +27,12 @@ public class EmailService {
 	) {
 		this.emailInfrastructure = emailInfrastructure;
 		this.emailRepository = emailRepository;
+	}
+
+	//Testpurposes
+	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port) {
+		this.emailInfrastructure = new EmailInfrastructure(host, port);
+		this.emailRepository = new EmailRepository(jdbcTemplate);
 	}
 	
 	public void sendEmail(KiteableWeatherDetected kiteable) {

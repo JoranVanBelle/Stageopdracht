@@ -1,10 +1,22 @@
 package com.stage.adapter.mvb.infrastructure;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import com.icegreen.greenmail.junit.GreenMailRule;
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetupTest;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMultipart;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +25,6 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.mail.javamail.MimeMessagePreparator;
 
 import com.stage.KiteableWeatherDetected;
 
@@ -24,24 +33,25 @@ import jakarta.mail.internet.MimeMessage;
 @ExtendWith(MockitoExtension.class)
 public class EmailInfrastructureTest {
 
+	private GreenMail greenMail;
+	private EmailInfrastructure emailInfrastructure;
 
-	private EmailInfrastructure mockEmailInfrastructure;
-	
-	private JavaMailSender mockEmailSender = Mockito.mock(JavaMailSender.class);
-	
-	@Captor
-	private ArgumentCaptor<MimeMessagePreparator> mimeMessagePreparatorCaptor;
-	
 	@BeforeEach
 	public void setup() {
-		mockEmailInfrastructure = new EmailInfrastructure(
-				mockEmailSender
-		);
+		greenMail = new GreenMail(ServerSetupTest.SMTP);
+		greenMail.start();
+		emailInfrastructure = new EmailInfrastructure("localhost", greenMail.getSmtp().getPort());
 	}
-	
+
+	@AfterEach
+	public void tearDown() {
+		greenMail.stop();
+	}
+
 	@Test
-	public void sendEmail() throws Exception {
-    	KiteableWeatherDetected weather = new KiteableWeatherDetected();
+	public void givenEmailMessageWithAttachment_whenEmailIsSent_MessageIsReceived() throws Exception {
+
+		KiteableWeatherDetected weather = new KiteableWeatherDetected();
         weather.setDataID("NieuwpoortKiteable1");
         weather.setLocatie("Nieuwpoort");
         weather.setWindsnelheid("10.00");
@@ -50,40 +60,26 @@ public class EmailInfrastructureTest {
         weather.setEenheidGolfhoogte("cm");
         weather.setWindrichting("10.00");
         weather.setEenheidWindrichting("deg");
-        
-        List<String> emails = new ArrayList<>();
-        emails.add("test@email.com");
-        emails.add("test2@email.com");
-        
-        mockEmailInfrastructure.sendEmail(weather, emails);
-        
-        Mockito.verify(mockEmailSender).send(mimeMessagePreparatorCaptor.capture());
-        MimeMessagePreparator mimeMessagePreparator = mimeMessagePreparatorCaptor.getValue();
-        MimeMessage mimeMessage = Mockito.mock(MimeMessage.class);
-        mimeMessagePreparator.prepare(mimeMessage);
-        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
-        mimeMessageHelper.setValidateAddresses(false);
-        mimeMessageHelper.setTo(emails.toArray(new String[0]));
-        mimeMessageHelper.setSubject("Kiteable weather detected in Test Location");
-        
-        String expectedText = String.format(
-        		"Kiteable weather detected at: %s%n"
-        		+ "Location: %s%n"
-        		+ "Windspeed: %s %s%n"
-        		+ "Waveheight: %s %s%n"
-        		+ "Winddirection: %s %s%n", 
-        		weather.getLocatie(), 
-        		weather.getWindsnelheid(), 
-        		weather.getEenheidWindsnelheid(), 
-        		weather.getGolfhoogte(), 
-        		weather.getEenheidGolfhoogte(), 
-        		weather.getWindrichting(), 
-        		weather.getEenheidWindrichting(), 
-        		weather.getTijdstip());
-        
-        mimeMessageHelper.setText(expectedText, true);
-        verify(mockEmailSender).send(mimeMessagePreparator);
-        
+
+		emailInfrastructure.sendEmail(weather, Arrays.asList("joran.vanbelle@live.be"));
+
+		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+		assertEquals(1, receivedMessages.length);
+
+		MimeMessage receivedMessage = receivedMessages[0];
+		assertEquals("Kiteable weather detected at Nieuwpoort", subjectFromMessage(receivedMessage));
+		assertEquals(EmailInfrastructure.getText(weather), emailTextFrom(receivedMessage));
 	}
-	
+
+	private static String subjectFromMessage(MimeMessage receivedMessage) throws MessagingException, MessagingException {
+		return receivedMessage.getSubject();
+	}
+
+	private static String emailTextFrom(MimeMessage receivedMessage) throws IOException, MessagingException, IOException {
+		return ((MimeMultipart) receivedMessage.getContent())
+				.getBodyPart(0)
+				.getContent()
+				.toString();
+	}
+
 }

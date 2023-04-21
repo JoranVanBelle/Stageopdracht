@@ -42,7 +42,6 @@ public class KiteableWeatherReconProcessor implements Processor<String, GenericR
 
 		String location = getLocation(record.value().get("SensorID").toString());
 
-		System.err.println(location);
 		this.kiteableKeyName = String.format("%sKiteable", location);
 		this.unkiteableKeyName = String.format("%sUnkiteable", location);
 
