@@ -28,7 +28,7 @@ public class ApplicationHelper extends Thread{
 
 
 	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA", "NP7WVC"};
-	public static final int CREATE_EVENTS = 1000 * 05 * 01 * 1; // 1000 * 60 * 60 * 1
+	public static final int CREATE_EVENTS = 1000 * 10 * 01 * 1; // 1000 * 60 * 60 * 1
 	private final CurrentData currentData;
 	private final Catalog catalog;
 	private final String bootstrap_servers;
@@ -50,7 +50,7 @@ public class ApplicationHelper extends Thread{
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			System.out.println("ℹ️ Collecting the current data and catalog");
+			System.out.printf("ℹ️ Collecting the current data and catalog - %s\r\n", DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now()));
 			JSONObject data = currentData.getCurrentData();
 			JSONObject cat = catalog.getCatalog();
 
@@ -59,8 +59,6 @@ public class ApplicationHelper extends Thread{
 				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
 				rdmProd.createEvent();
 			}
-
-			System.out.println(String.format("ℹ️ Raw data saved at %s",  DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now())));
 			
 		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
 	}

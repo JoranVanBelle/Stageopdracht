@@ -183,11 +183,13 @@ public class KiteableWeatherStream extends Thread {
 				.branch((k, v) -> v.getSchema().getName().toString().startsWith("Kiteable"),
 						Branched.withConsumer(s -> s
 								.mapValues(v -> new KiteableWeatherDetected(String.format("%s%d", v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+								.peek((k, v) -> System.out.println("✔ Kiteable weather detected"))
 								.to(outtopic, Produced.with(Serdes.String(), kiteableWeatherDetectedSerde))
 						))
 				.branch((k, v) -> v.getSchema().getName().startsWith("NoKiteable"),
 						Branched.withConsumer(s -> s
 								.mapValues(v -> new NoKiteableWeatherDetected(String.format("%s%d", v.get("DataID").toString(), (long) v.get("Tijdstip")), v.get("Locatie").toString(), v.get("Windsnelheid").toString(), v.get("EenheidWindsnelheid").toString(), v.get("Golfhoogte").toString(), v.get("EenheidGolfhoogte").toString(), v.get("Windrichting").toString(), v.get("EenheidWindrichting").toString(), (long) v.get("Tijdstip")))
+								.peek((k, v) -> System.out.println("💀 Unkiteable weather detected"))
 								.to(outtopic, Produced.with(Serdes.String(), noKiteableWeatherDetectedSerde))
 						));
 

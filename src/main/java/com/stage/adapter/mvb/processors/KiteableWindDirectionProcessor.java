@@ -54,16 +54,7 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
 		}
 
 		if(isRecordFirstRecordInStateStore(mostRecentEvent, record)) {
-			RawDataMeasured kitableWindDetected = new RawDataMeasured(
-					record.value().getSensorID(),
-					record.value().getLocatie(),
-					record.value().getWaarde(),
-					record.value().getEenheid(),
-					record.value().getTijdstip()
-			);
-
-			var output = new Record<>(record.key(), kitableWindDetected, record.timestamp(), record.headers());
-			context.forward(output);
+			return;
 		}
 		
 		if(isValueBetweenUpperAndLowerBoundAndLastNotBetweenUpperAndLower(mostRecentEvent, record, upperBound, lowerBound)) {

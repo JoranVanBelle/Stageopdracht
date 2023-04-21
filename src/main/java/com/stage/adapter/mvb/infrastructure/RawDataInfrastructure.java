@@ -35,7 +35,6 @@ public class RawDataInfrastructure {
 
 		producer.send(record);
 		producer.flush();
-		System.out.println("ℹ️ Event published");
 }
 	
 }

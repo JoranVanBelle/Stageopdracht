@@ -115,12 +115,12 @@ public class KiteableWaveStream extends Thread {
 			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new KiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k,v) -> {System.out.printf("ℹ️ There is a kiteable wave detected: %s%n", v.getWaarde());})
+							.peek((k,v) -> {System.out.printf("🌊 There is a kiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), kiteableWaveDetectedSerde))))
 			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new UnkiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k, v) -> {System.out.printf("ℹ️ There is an unkiteable wave detected: %s%n", v.getWaarde());})
+							.peek((k, v) -> {System.out.printf("🌊 There is an unkiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), unkiteableWaveDetectedSerde))));
 		
 			

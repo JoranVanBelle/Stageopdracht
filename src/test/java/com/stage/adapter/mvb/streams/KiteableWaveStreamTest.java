@@ -330,5 +330,26 @@ public class KiteableWaveStreamTest extends KafkaTopologyTestBase {
         Assertions.assertEquals(14, windDetectionsList.size());
         
     }
+
+    @Test
+    public void testWaveHeightStream_MeasuredSameValue() {
+
+        var rawMeasurements = testDriver.createInputTopic(RAW_TOPIC, new StringSerializer(), MergedWeatherStream.rawDataMeasuredSerde(schema_registry).serializer());
+
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+        rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "100", "cm", 1L));
+
+        var waveDetectionsList = testDriver.createOutputTopic(KITABLE_WAVE_DETECTED_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+
+        Assertions.assertEquals(1, waveDetectionsList.size());
+    }
     
 }

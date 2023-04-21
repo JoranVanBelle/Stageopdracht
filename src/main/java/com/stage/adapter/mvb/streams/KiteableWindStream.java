@@ -117,13 +117,13 @@ public class KiteableWindStream extends Thread {
 	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) > windspeedTreshold,
 	        		Branched.withConsumer(s -> s
 	        				.mapValues(v -> new KiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-	        				.peek((k, v) -> {System.out.printf("ℹ️ There is a kiteable windspeed detected: %s%n", v.getWaarde());})
+	        				.peek((k, v) -> {System.out.printf("⏩ There is a kiteable windspeed detected: %s%n", v.getWaarde());})
 	        				.to(kiteableWindTopic, Produced.with(Serdes.String(), kiteableWindDetectedSerde))))
 	        
 	        .branch((key,value) -> Double.parseDouble(value.getWaarde()) <= windspeedTreshold,
 	        		Branched.withConsumer(s -> s
 	        		.mapValues(v -> new UnkiteableWindDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-    				.peek((k, v) -> {System.out.printf("ℹ️ There is an unkiteable windspeed detected: %s%n", v.getWaarde());})
+    				.peek((k, v) -> {System.out.printf("⏩ There is an unkiteable windspeed detected: %s%n", v.getWaarde());})
 	        		.to(kiteableWindTopic, Produced.with(Serdes.String(), windHasFallenOffSerde))));
 
 		return builder.build(streamProperties);
