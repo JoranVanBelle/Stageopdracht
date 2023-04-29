@@ -54,6 +54,9 @@ public class ApplicationHelper extends Thread{
 			JSONObject data = currentData.getCurrentData();
 			JSONObject cat = catalog.getCatalog();
 
+			System.out.println(cat);
+			System.out.println(data);
+
 			for(String sensor : sensoren) {
 				String[] params = getParams(cat, data, sensor);
 				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));

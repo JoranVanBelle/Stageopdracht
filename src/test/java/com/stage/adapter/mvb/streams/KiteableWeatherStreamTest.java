@@ -33,9 +33,9 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 							WAVE_HEIGHT_TOPIC,
 							WIND_DIRECTION_TOPIC,
 							OUTPUT_TOPIC,
-							MergedWeatherStream.genericRecordSerde(schema_registry),
-							MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry),
-							MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry),
+							KiteableWeatherStream.genericRecordSerde(schema_registry),
+							KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry),
+							KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry),
 							serdesConfigTest()
 							)
 				 );
@@ -49,15 +49,15 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	@Test
 	public void testOutputKiteableEvent() {
 		
-		var windSpeedTopic = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var waveHeightTopic = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopic = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
+		var windSpeedTopic = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var waveHeightTopic = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopic = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
 						
 		windSpeedTopic.pipeInput("NP7WC3", new KiteableWindDetected("NP7WC3", "Twoasten", "9.00", "m/s", 1L));
 		waveHeightTopic.pipeInput("NPBGHA", new KiteableWaveDetected("NPBGHA", "Twoasten", "151.00", "cm", 1L));
 		windDirectionTopic.pipeInput("NP7WRS", new KiteableWindDirectionDetected("NP7WRS", "Twoasten", "10.00", "deg", 1L));
 		
-		var kiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readKeyValue();
+		var kiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readKeyValue();
 		
 		Assertions.assertEquals("NieuwpoortKiteable1", kiteableEvent.value.getDataID());
 		Assertions.assertEquals("Nieuwpoort", kiteableEvent.value.getLocatie());
@@ -73,16 +73,16 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	@Test
 	public void testOutputUnkiteableEvent() {
 		
-		var windSpeedTopic = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopic = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopic = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
+		var windSpeedTopic = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopic = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopic = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
 						
 		windSpeedTopic.pipeInput("NP7WC3", new UnkiteableWindDetected("NP7WC3", "Twoasten", "9.00", "m/s", 1L));
 		waveHeightTopic.pipeInput("NPBGHA", new KiteableWaveDetected("NPBGHA", "Twoasten", "151.00", "cm", 1L));
 		windDirectionTopic.pipeInput("NP7WRS", new KiteableWindDirectionDetected("NP7WRS", "Twoasten", "10.00", "deg", 1L));
 		
-		var unkiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readKeyValue();
-		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var unkiteableEvent = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readKeyValue();
+		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 		
 		Assertions.assertEquals("NieuwpoortUnkiteable1", unkiteableEvent.value.getDataID());
 		Assertions.assertEquals("Nieuwpoort", unkiteableEvent.value.getLocatie());
@@ -99,12 +99,12 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	
 	@Test
 	public void testAmountOfResultEvents() {
-		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry).serializer());
+		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWindDirectionDetectedSerde(schema_registry).serializer());
 		
 		// NO
 		windSpeedTopicKiteable.pipeInput("NP7WC3", new KiteableWindDetected("NP7WC3", "Twoasten", "9.00", "m/s", 1L));
@@ -126,7 +126,7 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 		windDirectionTopicKiteable.pipeInput("NP7WRS", new KiteableWindDirectionDetected("NP7WC3", "Twoasten", "10.00", "deg", 3L));
 		
 		
-		var eventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var eventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 		
 		Assertions.assertEquals(4, eventList.size());
 		
@@ -134,18 +134,18 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	
 	@Test
 	public void publishNothingWhenOneKiteableParams() {
-		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry).serializer());
+		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWindDirectionDetectedSerde(schema_registry).serializer());
 	
 		windSpeedTopicKiteable.pipeInput("NP7WC3", new KiteableWindDetected("NP7WC3", "Twoasten", "9.00", "m/s", 1L));
 
 		
-		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
-		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 
 		Assertions.assertEquals(0, kiteableEventList.size());
 		Assertions.assertEquals(0, unkiteableEventList.size());
@@ -153,19 +153,19 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	
 	@Test
 	public void publishNothingWhenTwoKiteableParams() {
-		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry).serializer());
+		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWindDirectionDetectedSerde(schema_registry).serializer());
 	
 		windSpeedTopicKiteable.pipeInput("NP7WC3", new KiteableWindDetected("NP7WC3", "Twoasten", "9.00", "m/s", 1L));
 		waveHeightTopicKiteable.pipeInput("NPBGHA", new KiteableWaveDetected("NPBGHA", "Twoasten", "151.00", "cm", 1L));
 
 		
-		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
-		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 
 		Assertions.assertEquals(0, kiteableEventList.size());
 		Assertions.assertEquals(0, unkiteableEventList.size());
@@ -173,18 +173,18 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	
 	@Test
 	public void publishNothingWhenOneUnkiteableParams() {
-		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry).serializer());
+		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWindDirectionDetectedSerde(schema_registry).serializer());
 	
 		waveHeightTopicUnkiteable.pipeInput("NPBGHA", new UnkiteableWaveDetected("NPBGHA", "Twoasten", "151.00", "cm", 1L));
 
 		
-		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
-		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 
 		Assertions.assertEquals(0, kiteableEventList.size());
 		Assertions.assertEquals(0, unkiteableEventList.size());
@@ -192,19 +192,19 @@ public class KiteableWeatherStreamTest extends KafkaTopologyTestBase {
 	
 	@Test
 	public void publishNothingWhenTwoUnkiteableParams() {
-		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
-		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), MergedWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
-		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
-		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.kiteableWinddirectionDetectedSerde(schema_registry).serializer());
-		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), MergedWeatherStream.unkiteableWinddirectionDetected(schema_registry).serializer());
+		var windSpeedTopicKiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDetectedSerde(schema_registry).serializer());
+		var windSpeedTopicUnkiteable = testDriver.createInputTopic(WIND_SPEED_TOPIC, new StringSerializer(), KiteableWeatherStream.windHasFallenOffSerde(schema_registry).serializer());
+		var waveHeightTopicKiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWaveDetectedSerde(schema_registry).serializer());
+		var waveHeightTopicUnkiteable = testDriver.createInputTopic(WAVE_HEIGHT_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWaveDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicKiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.kiteableWindDirectionDetectedSerde(schema_registry).serializer());
+		var windDirectionTopicUnkiteable = testDriver.createInputTopic(WIND_DIRECTION_TOPIC, new StringSerializer(), KiteableWeatherStream.unkiteableWindDirectionDetectedSerde(schema_registry).serializer());
 	
 		waveHeightTopicUnkiteable.pipeInput("NPBGHA", new UnkiteableWaveDetected("NPBGHA", "Twoasten", "151.00", "cm", 1L));
 		windDirectionTopicUnkiteable.pipeInput("NP7WRS", new UnkiteableWindDirectionDetected("NP7WRS", "Twoasten", "10.00", "deg", 1L));
 
 		
-		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
-		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), MergedWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var kiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.kiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
+		var unkiteableEventList = testDriver.createOutputTopic(OUTPUT_TOPIC, new StringDeserializer(), KiteableWeatherStream.noKiteableWeatherDetectedSerde(schema_registry).deserializer()).readRecordsToList();
 
 		Assertions.assertEquals(0, kiteableEventList.size());
 		Assertions.assertEquals(0, unkiteableEventList.size());

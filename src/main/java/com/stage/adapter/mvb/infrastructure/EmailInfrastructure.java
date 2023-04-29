@@ -52,16 +52,21 @@ public class EmailInfrastructure {
 			message.setFrom(new InternetAddress("joran.vanbelle2@student.hogent.be"));
 			for(String email : emails) {
 				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+
+				MimeBodyPart mimeBodyPart = new MimeBodyPart();
+				mimeBodyPart.setContent(getText(content), "text/html; charset=utf-8");
+				multipart.addBodyPart(mimeBodyPart);
+
+				MimeBodyPart unsubPart = new MimeBodyPart();
+				unsubPart.setContent("<p><a href=\"http://localhost:3000/unsubscribe/email/"+email+"\">Click here</a> to unsubscribe from this email.</p>", "text/html; charset=utf-8");
+				multipart.addBodyPart(unsubPart);
+
+				message.setContent(multipart);
+				message.setSubject(String.format("Kiteable weather detected at %s", content.getLocatie()));
+
+				Transport.send(message);
 			}
-			message.setSubject(String.format("Kiteable weather detected at %s", content.getLocatie()));
 
-			MimeBodyPart mimeBodyPart = new MimeBodyPart();
-			mimeBodyPart.setContent(getText(content), "text/html; charset=utf-8");
-			multipart.addBodyPart(mimeBodyPart);
-
-			message.setContent(multipart);
-
-			Transport.send(message);
 		} catch (MessagingException e) {
 			throw new RuntimeException(e);
 		}
