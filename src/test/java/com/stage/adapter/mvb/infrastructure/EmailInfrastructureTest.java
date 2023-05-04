@@ -61,7 +61,7 @@ public class EmailInfrastructureTest {
         weather.setWindrichting("10.00");
         weather.setEenheidWindrichting("deg");
 
-		emailInfrastructure.sendEmail(weather, Arrays.asList("joran.vanbelle@live.be"));
+		emailInfrastructure.sendEmail(weather, Arrays.asList("joran.vanbelle@live.be"), "test");
 
 		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
 		assertEquals(1, receivedMessages.length);

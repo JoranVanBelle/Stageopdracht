@@ -14,10 +14,12 @@ public class EmailService {
 
 	private final EmailInfrastructure emailInfrastructure;
 	private final EmailRepository emailRepository;
+	private String baseUrl;
 	
-	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port, String email_username, String email_password) {
+	public EmailService(NamedParameterJdbcTemplate jdbcTemplate, String host, int port, String email_username, String email_password, String baseUrl) {
 		this.emailInfrastructure = new EmailInfrastructure(host, port, email_username, email_password);
 		this.emailRepository = new EmailRepository(jdbcTemplate);
+		this.baseUrl = baseUrl;
 	}
 
 	//Testpurposes
@@ -39,7 +41,7 @@ public class EmailService {
 		
 		List<String> emailaddresses = collectEmailAddresses(kiteable.getLocatie());
 		
-		emailInfrastructure.sendEmail(kiteable, emailaddresses);
+		emailInfrastructure.sendEmail(kiteable, emailaddresses, baseUrl);
 	}
 	
 	public List<String> collectEmailAddresses(String location) {

@@ -37,7 +37,7 @@ public class EmailInfrastructure {
 		prop.put("mail.smtp.port", port);
 	}
 
-	public void sendEmail(KiteableWeatherDetected content, List<String> emails) {
+	public void sendEmail(KiteableWeatherDetected content, List<String> emails, String baseUrl) {
 
 		Session session = Session.getInstance(prop, new Authenticator() {
 			@Override
@@ -58,7 +58,7 @@ public class EmailInfrastructure {
 				multipart.addBodyPart(mimeBodyPart);
 
 				MimeBodyPart unsubPart = new MimeBodyPart();
-				unsubPart.setContent("<p><a href=\"http://localhost:3000/unsubscribe/email/"+email+"\">Click here</a> to unsubscribe from this email.</p>", "text/html; charset=utf-8");
+				unsubPart.setContent(String.format("<p>Click <a href=\"%s/%s/%s\">here</a> to unsubscribe from this email.</p>", "text/html; charset=utf-8", baseUrl, email, content.getLocatie()), "text/html; charset=utf-8");
 				multipart.addBodyPart(unsubPart);
 
 				message.setContent(multipart);

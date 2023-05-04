@@ -94,8 +94,9 @@ public class ApplicationIntegrationTest {
 				schema_registry,
 				"localhost",
 				greenMail.getSmtp().getPort(),
-				"joran.vanbelle2@student.hogent.be",
-				"e&FK@G82a$SE%8^rke77"
+				"myUsername",
+				"secretPassword",
+				"test"
 		);
 
 		KiteableWeatherConsumer consumer = new KiteableWeatherConsumer(

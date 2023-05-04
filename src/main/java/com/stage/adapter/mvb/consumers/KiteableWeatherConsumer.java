@@ -38,12 +38,12 @@ public class KiteableWeatherConsumer extends Thread {
 	
 	private static final Logger logger = LogManager.getLogger(KiteableWeatherConsumer.class);
 	
-	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password, String host, int port, String email_username, String email_password) {
+	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password, String host, int port, String email_username, String email_password, String baseUrl) {
 		this.consumer = new KafkaConsumer<>(props);
 		this.database = new Database();
 		this.jdbcTemplate = new NamedParameterJdbcTemplate(database.getPGPoolingDataSource(database_url, database_user, database_password));
 		this.weatherService = new WeatherService(jdbcTemplate);
-		this.emailService = new EmailService(jdbcTemplate, host, port, email_username, email_password);
+		this.emailService = new EmailService(jdbcTemplate, host, port, email_username, email_password, baseUrl);
 	}
 
 	public KiteableWeatherConsumer(Properties props, String database_url, String database_user, String database_password, String host, int port) {
