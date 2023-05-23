@@ -2,17 +2,18 @@ package com.stage.adapter.mvb;
 
 import java.util.Properties;
 
-import com.stage.adapter.mvb.producers.Catalog;
-import com.stage.adapter.mvb.streams.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.stage.adapter.mvb.consumers.KiteableWeatherConsumer;
 import com.stage.adapter.mvb.helpers.ApplicationHelper;
+import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.producers.CurrentData;
+import com.stage.adapter.mvb.streams.KiteableWaveStream;
+import com.stage.adapter.mvb.streams.KiteableWeatherStream;
+import com.stage.adapter.mvb.streams.KiteableWindStream;
+import com.stage.adapter.mvb.streams.KiteableWinddirectionStream;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
