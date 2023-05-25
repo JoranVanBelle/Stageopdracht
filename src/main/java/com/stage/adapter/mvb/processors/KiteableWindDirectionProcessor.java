@@ -34,7 +34,7 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
 	public void process(Record<String, RawDataMeasured> record) {
 		double lowerBound = thresholds.get(record.key())[0];
 		double upperBound = thresholds.get(record.key())[1];
-		
+		System.err.println(upperBound);
 		var mostRecentEvent = stateStore.get(record.key());
 		
 		if(mostRecentEvent == null) {
