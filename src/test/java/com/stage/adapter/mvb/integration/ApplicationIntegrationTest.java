@@ -65,7 +65,7 @@ public class ApplicationIntegrationTest {
 	@AfterAll
 	public static void afterAll() {
 		kafka.close();
-		postgreSQLContainer.close();
+//		postgreSQLContainer.close();
 	}
 
 	@BeforeEach
@@ -96,7 +96,19 @@ public class ApplicationIntegrationTest {
 				greenMail.getSmtp().getPort(),
 				"myUsername",
 				"secretPassword",
-				"test"
+				"test",
+				"cluster_api_key",
+				"cluster_api_secret",
+				"sr_api_key",
+				"sr_api_secret",
+				"sr_api_key:sr_api_secret",
+				"USER_INFO",
+				"earliest",
+				45000,
+				"use_all_dns_ips",
+				"PLAIN",
+				String.format("org.apache.kafka.common.security.plain.PlainLoginModule required username='%s' password='%s';", "cluster_api_key", "cluster_api_secret"),
+				"PLAINTEXT"
 		);
 
 		KiteableWeatherConsumer consumer = new KiteableWeatherConsumer(
@@ -108,10 +120,10 @@ public class ApplicationIntegrationTest {
 				greenMail.getSmtp().getPort()
 		);
 
-		KiteableWaveStream waveStream = new KiteableWaveStream("integration_test", kafka.getBootstrapServers(), schema_registry);
-		KiteableWindStream windspeedStream = new KiteableWindStream("integration_test", kafka.getBootstrapServers(), schema_registry);
-		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream("integration_test", kafka.getBootstrapServers(), schema_registry);
-		KiteableWeatherStream weatherStream = new KiteableWeatherStream("integration_test", kafka.getBootstrapServers(), schema_registry);
+		KiteableWaveStream waveStream = new KiteableWaveStream("integration_test", kafka.getBootstrapServers(), schema_registry, String.format("org.apache.kafka.common.security.plain.PlainLoginModule required username='%s' password='%s';", "cluster_api_key", "cluster_api_secret"), "PLAIN", "earliest", "PLAINTEXT");
+		KiteableWindStream windspeedStream = new KiteableWindStream("integration_test", kafka.getBootstrapServers(), schema_registry, String.format("org.apache.kafka.common.security.plain.PlainLoginModule required username='%s' password='%s';", "cluster_api_key", "cluster_api_secret"), "PLAIN", "earliest", "PLAINTEXT");
+		KiteableWinddirectionStream winddirectionStream = new KiteableWinddirectionStream("integration_test", kafka.getBootstrapServers(), schema_registry, String.format("org.apache.kafka.common.security.plain.PlainLoginModule required username='%s' password='%s';", "cluster_api_key", "cluster_api_secret"), "PLAIN", "earliest", "PLAINTEXT");
+		KiteableWeatherStream weatherStream = new KiteableWeatherStream("integration_test", kafka.getBootstrapServers(), schema_registry, String.format("org.apache.kafka.common.security.plain.PlainLoginModule required username='%s' password='%s';", "cluster_api_key", "cluster_api_secret"), "PLAIN", "earliest", "PLAINTEXT");
 
 		Thread comsumerThread = new Thread(consumer);
 

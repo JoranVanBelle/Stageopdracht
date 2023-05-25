@@ -1,6 +1,5 @@
 package com.stage.adapter.mvb.helpers;
 
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,8 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,22 +25,40 @@ public class ApplicationHelper extends Thread{
 
 
 	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA", "NP7WVC"};
-	public static final int CREATE_EVENTS = 1000 * 10 * 01 * 1; // 1000 * 60 * 60 * 1
+	public static final int CREATE_EVENTS = 10;
 	private final CurrentData currentData;
 	private final Catalog catalog;
 	private final String bootstrap_servers;
 	private final String schema_registry;
+	private final String userInfo;
+	private final String credentialsSource;
+	private final int timeoutMs;
+	private final String dnsLookup;
+	private final String saslMechanism;
+	private final String saslJaasConfig;
+	private final String securityProtocol;
 	
 	public ApplicationHelper(
 			CurrentData currentData, 
 			Catalog catalog,
 			String bootstrap_servers,
-			String schema_registry
+			String schema_registry, 
+			String userInfo, String credentialsSource, 
+			int timeoutMs, String dnsLookup, 
+			String saslMechanism, String saslJaasConfig, 
+			String securityProtocol
 		) {
 		this.currentData = currentData;
 		this.catalog = catalog;
 		this.bootstrap_servers = bootstrap_servers;
 		this.schema_registry = schema_registry;
+		this.userInfo = userInfo;
+		this.credentialsSource = credentialsSource;
+		this.timeoutMs = timeoutMs;
+		this.dnsLookup = dnsLookup;
+		this.saslMechanism = saslMechanism;
+		this.saslJaasConfig = saslJaasConfig;
+		this.securityProtocol = securityProtocol;
 	}
 	
 	@Override
@@ -59,22 +74,34 @@ public class ApplicationHelper extends Thread{
 
 			for(String sensor : sensoren) {
 				String[] params = getParams(cat, data, sensor);
-				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
+				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry, userInfo, credentialsSource, timeoutMs,
+						dnsLookup, saslMechanism, saslJaasConfig, securityProtocol), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
 				rdmProd.createEvent();
 			}
 			
-		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
+		}, 0, CREATE_EVENTS, TimeUnit.MINUTES);
 	}
 	
-private static Properties getProperties(String bootstrap_servers, String schema_registry) {
+private static Properties getProperties(String bootstrap_servers, String schema_registry, String userInfo, String credentialsSource, int timeoutMs,
+		String dnsLookup, String saslMechanism, String saslJaasConfig, String securityProtocol) {
 		
         final Properties props = new Properties();
+        
+        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        props.put("basic.auth.user.info", userInfo);
+        props.put("basic.auth.credentials.source", credentialsSource);
+        
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.RETRIES_CONFIG, 0);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		
+		props.put("session.timeout.ms", timeoutMs);
+		props.put("client.dns.lookup", dnsLookup);
+		props.put("sasl.mechanism", saslMechanism);
+		props.put("sasl.jaas.config", saslJaasConfig);
+		props.put("security.protocol", securityProtocol);
         
         return props;
 	}

@@ -36,19 +36,29 @@ public class KiteableWaveStream extends Thread {
 	private final String app_id;
 	private final String bootstrap_servers;
 	private final String schema_registry;
+	private final String saslJaasConfig;
+	private final String saslMechanism;
+	private final String resetConfig;
+	private final String securityProtocol;
 
-	public KiteableWaveStream(String app_id, String bootstrap_servers, String schema_registry) {
+	public KiteableWaveStream(String app_id, String bootstrap_servers, String schema_registry,
+			String saslJaasConfig, String saslMechanism, String resetConfig, String securityProtocol) {
 		this.app_id = app_id;
 		this.bootstrap_servers = bootstrap_servers;
 		this.schema_registry = schema_registry;
+		this.saslJaasConfig = saslJaasConfig;
+		this.saslMechanism = saslMechanism;
+		this.resetConfig = resetConfig;
+		this.securityProtocol = securityProtocol;
 	}
 
 	@Override
 	public void run() {
 
-		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry);
+		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry,
+				saslJaasConfig, saslMechanism, resetConfig, securityProtocol);
 
-		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(schema_registry), kiteableWaveDetectedSerde(schema_registry), unkiteableWaveDetectedSerde(schema_registry), streamsConfig(app_id, bootstrap_servers, schema_registry));
+		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(schema_registry), kiteableWaveDetectedSerde(schema_registry), unkiteableWaveDetectedSerde(schema_registry), streamsConfig(app_id, bootstrap_servers, schema_registry, saslJaasConfig, saslMechanism, resetConfig, securityProtocol));
 		KafkaStreams streams = new KafkaStreams(topo, props);
 		streams.start();
 		System.out.println("ℹ️ KiteableWaveStream started");
@@ -79,12 +89,20 @@ public class KiteableWaveStream extends Thread {
 		return unkiteableWaveDetected;
 	}
 
-	private Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry) {
+	private Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry,
+			String saslJaasConfig, String saslMechanism, String resetConfig, String securityProtocol) {
 
 		Properties settings = new Properties();
 		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format("%s.wave.height", app_id));
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
 		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		
+		settings.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+		settings.put("sasl.jaas.config", saslJaasConfig);
+		settings.put("ssl.endpoint.identification.algorithm", "https");
+		settings.put("sasl.mechanism", saslMechanism);
+		settings.put("auto.offset.reset", resetConfig);
+		settings.put("security.protocol", securityProtocol);
 
 		return settings;
 	}

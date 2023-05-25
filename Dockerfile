@@ -1,12 +1,11 @@
-FROM maven:3.8.7-19-jdk as build
+FROM openjdk:17-slim
 
-COPY src /usr/src/app/src
-COPY pom.xml /usr/src/app
+VOLUME /tmp
 
-RUN mvn /usr/src/app/pom.xml clean package
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
-FROM openjdk:19-jdk
+COPY target/libs/ /libs/
+COPY target/*.jar /App.jar
 
-COPY /target/adapter.mvb-0.0.1-SNAPSHOT.jar adapter.jar
-
-ENTRYPOINT ["java","-jar", "/adapter.jar"]
+ENTRYPOINT [ "/run.sh" ]
