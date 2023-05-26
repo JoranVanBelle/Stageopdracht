@@ -1,6 +1,5 @@
 package com.stage.adapter.mvb.helpers;
 
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,12 +10,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.stage.adapter.mvb.Application;
+//import com.stage.adapter.mvb.Application;
 import com.stage.adapter.mvb.producers.Catalog;
 import com.stage.adapter.mvb.producers.CurrentData;
 import com.stage.adapter.mvb.producers.RawDataMeasuredProducer;
@@ -27,46 +24,84 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 public class ApplicationHelper extends Thread{
 
 
-	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA"};
-	public static final int CREATE_EVENTS = 1000 * 05 * 01 * 1; // 1000 * 60 * 60 * 1
+	private static final String[] sensoren = {"MP0WC3", "MP7WC3", "NP7WC3", "NPBGHA", "NP7WVC"};
+	public static final int CREATE_EVENTS = 10;
 	private final CurrentData currentData;
 	private final Catalog catalog;
-
-	private static final Logger logger = LogManager.getLogger(Application.class);
+	private final String bootstrap_servers;
+	private final String schema_registry;
+	private final String userInfo;
+	private final String credentialsSource;
+	private final int timeoutMs;
+	private final String dnsLookup;
+	private final String saslMechanism;
+	private final String saslJaasConfig;
+	private final String securityProtocol;
 	
-	public ApplicationHelper(CurrentData currentData, Catalog catalog) {
+	public ApplicationHelper(
+			CurrentData currentData, 
+			Catalog catalog,
+			String bootstrap_servers,
+			String schema_registry, 
+			String userInfo, String credentialsSource, 
+			int timeoutMs, String dnsLookup, 
+			String saslMechanism, String saslJaasConfig, 
+			String securityProtocol
+		) {
 		this.currentData = currentData;
 		this.catalog = catalog;
+		this.bootstrap_servers = bootstrap_servers;
+		this.schema_registry = schema_registry;
+		this.userInfo = userInfo;
+		this.credentialsSource = credentialsSource;
+		this.timeoutMs = timeoutMs;
+		this.dnsLookup = dnsLookup;
+		this.saslMechanism = saslMechanism;
+		this.saslJaasConfig = saslJaasConfig;
+		this.securityProtocol = securityProtocol;
 	}
 	
 	@Override
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			logger.info("ℹ️ Collecting the current data and catalog");
+			System.out.printf("ℹ️ Collecting the current data and catalog - %s\r\n", DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now()));
 			JSONObject data = currentData.getCurrentData();
 			JSONObject cat = catalog.getCatalog();
-			
+
+			System.out.println(cat);
+			System.out.println(data);
+
 			for(String sensor : sensoren) {
 				String[] params = getParams(cat, data, sensor);
-				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
+				RawDataMeasuredProducer rdmProd = new RawDataMeasuredProducer(getProperties(bootstrap_servers, schema_registry, userInfo, credentialsSource, timeoutMs,
+						dnsLookup, saslMechanism, saslJaasConfig, securityProtocol), sensor, params[0], params[1], params[2], Long.parseLong(params[3]));
 				rdmProd.createEvent();
 			}
 			
-			logger.info(String.format("ℹ️ Raw data saved at %s",  DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now())));
-			
-		}, 0, CREATE_EVENTS, TimeUnit.MILLISECONDS);
+		}, 0, CREATE_EVENTS, TimeUnit.MINUTES);
 	}
 	
-private static Properties getProperties() {
+private static Properties getProperties(String bootstrap_servers, String schema_registry, String userInfo, String credentialsSource, int timeoutMs,
+		String dnsLookup, String saslMechanism, String saslJaasConfig, String securityProtocol) {
 		
         final Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        props.put(ProducerConfig.ACKS_CONFIG, "all");
-        props.put(ProducerConfig.RETRIES_CONFIG, 0);
+        
+        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+        props.put("basic.auth.user.info", userInfo);
+        props.put("basic.auth.credentials.source", credentialsSource);
+        
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        props.put(ProducerConfig.RETRIES_CONFIG, 0);
+		
+		props.put("session.timeout.ms", timeoutMs);
+		props.put("client.dns.lookup", dnsLookup);
+		props.put("sasl.mechanism", saslMechanism);
+		props.put("sasl.jaas.config", saslJaasConfig);
+		props.put("security.protocol", securityProtocol);
         
         return props;
 	}
@@ -96,7 +131,7 @@ private static Properties getProperties() {
 		        break;
 		    }
 		}
-		
+
 		JSONArray data = currentData.getJSONArray("current data");
 		for (int i = 0; i < data.length(); i++) {
 			JSONObject sensorData = data.getJSONObject(i);
@@ -108,7 +143,7 @@ private static Properties getProperties() {
 				break;
 			}
 		}
-		
+
 		return new String[] {loc, value, eenheid, Long.toString(millis)};
 	}
 	

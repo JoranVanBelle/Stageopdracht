@@ -2,15 +2,9 @@ package com.stage.adapter.mvb.streams;
 
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -21,89 +15,100 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.Stores;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.stage.KiteableWaveDetected;
 import com.stage.RawDataMeasured;
 import com.stage.UnkiteableWaveDetected;
-import com.stage.adapter.mvb.helpers.GracefulShutdown;
 import com.stage.adapter.mvb.processors.KiteableWaveProcessor;
 
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class KiteableWaveStream extends Thread {
 
+
 	private static final String INTOPIC = "Meetnet.meting.raw";
-	private static final String WAVETOPIC = "Meetnet.meting.wave.kitable";
-	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NPBGHA"}));
-	
-	private static final Logger logger = LogManager.getLogger(KiteableWaveStream.class);
-	
+	private static final String WAVETOPIC = "Meetnet.meting.wave.kiteable";
+
 	private static final String kvStoreName = "waveStream";
 	private static final double threshold = 150;
-	
+	private final List<String> SENSOREN = new ArrayList<String>(Arrays.asList(new String[] {"NPBGHA"}));
+
+	private final String app_id;
+	private final String bootstrap_servers;
+	private final String schema_registry;
+	private final String saslJaasConfig;
+	private final String saslMechanism;
+	private final String resetConfig;
+	private final String securityProtocol;
+
+	public KiteableWaveStream(String app_id, String bootstrap_servers, String schema_registry,
+			String saslJaasConfig, String saslMechanism, String resetConfig, String securityProtocol) {
+		this.app_id = app_id;
+		this.bootstrap_servers = bootstrap_servers;
+		this.schema_registry = schema_registry;
+		this.saslJaasConfig = saslJaasConfig;
+		this.saslMechanism = saslMechanism;
+		this.resetConfig = resetConfig;
+		this.securityProtocol = securityProtocol;
+	}
+
 	@Override
 	public void run() {
-		
-		Properties props = streamsConfig();
-		
-		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(props), kiteableWaveDetectedSerde(props), unkiteableWaveDetectedSerde(props), props);
+
+		Properties props = streamsConfig(app_id, bootstrap_servers, schema_registry,
+				saslJaasConfig, saslMechanism, resetConfig, securityProtocol);
+
+		Topology topo = buildTopology(SENSOREN, threshold, INTOPIC, WAVETOPIC, rawDataMeasuredSerde(schema_registry), kiteableWaveDetectedSerde(schema_registry), unkiteableWaveDetectedSerde(schema_registry), streamsConfig(app_id, bootstrap_servers, schema_registry, saslJaasConfig, saslMechanism, resetConfig, securityProtocol));
 		KafkaStreams streams = new KafkaStreams(topo, props);
 		streams.start();
-		logger.info("ℹ️ KiteableWaveStream started");
-		
-		GracefulShutdown.gracefulShutdown(streams);
+		System.out.println("ℹ️ KiteableWaveStream started");
 
 	}
-	
-	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(Properties envProps) {
+
+	public static SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde(String schema_registry) {
 		final SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
 		rawDataMeasuredSerde.configure(serdeConfig, false);
 		return rawDataMeasuredSerde;
 	}
 
-	public static SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde(Properties envProps) {
+	public static SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde(String schema_registry) {
 		final SpecificAvroSerde<KiteableWaveDetected> kiteableWaveDetectedSerde = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
 		kiteableWaveDetectedSerde.configure(serdeConfig, false);
 		return kiteableWaveDetectedSerde;
 	}
-	
-	public static SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde(Properties envProps) {
+
+	public static SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde(String schema_registry) {
 		final SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetected = new SpecificAvroSerde<>();
 		Map<String, String> serdeConfig = new HashMap<>();
-		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+		serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
 		unkiteableWaveDetected.configure(serdeConfig, false);
 		return unkiteableWaveDetected;
 	}
-	
-	private static Properties streamsConfig() {
-		
-		Properties settings = new Properties();
-		// Set a few key parameters
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, Optional.ofNullable(System.getenv("APP_ID")).orElseThrow(() -> new IllegalArgumentException("APP_ID is required")));
-		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Optional.ofNullable(System.getenv("BOOTSTRAP_SERVERS")).orElseThrow(() -> new IllegalArgumentException("BOOTSTRAP_SERVERS is required")));
-		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, Optional.ofNullable(System.getenv("SCHEMA_REGISTRY_URL")).orElseThrow(() -> new IllegalArgumentException("SCHEMA_REGISTRY_URL is required")));
-		//todo add extra configuration
 
-		// Any further settings
-//        settings.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, Optional.ofNullable(System.getenv("QS_SECURITY_PROTOCOL")).orElse("SASL_SSL"));
-//        settings.put("sasl.jaas.config", Optional.ofNullable(System.getenv("QS_JAAS_CONFIG")).orElseThrow(() -> new IllegalArgumentException("QS_JAAS_CONFIG is required")));
-//        settings.put("ssl.endpoint.identification.algorithm", Optional.ofNullable(System.getenv("QS_ENDPOINT_ID_ALG")).orElse("https"));
-//        settings.put("sasl.mechanism", Optional.ofNullable(System.getenv("QS_SASL_MECH")).orElse("PLAIN"));
-//        settings.put("replication.factor", Optional.ofNullable(System.getenv("QS_REPLICATION")).orElse("3"));
-//        settings.put("auto.offset.reset", Optional.ofNullable(System.getenv("QS_AUTO_OFFSET_RESET")).orElse("earliest"));
+	private Properties streamsConfig(String app_id, String bootstrap_servers, String schema_registry,
+			String saslJaasConfig, String saslMechanism, String resetConfig, String securityProtocol) {
+
+		Properties settings = new Properties();
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format("%s.wave.height", app_id));
+		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_servers);
+		settings.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schema_registry);
+		
+		settings.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+		settings.put("sasl.jaas.config", saslJaasConfig);
+		settings.put("ssl.endpoint.identification.algorithm", "https");
+		settings.put("sasl.mechanism", saslMechanism);
+		settings.put("auto.offset.reset", resetConfig);
+		settings.put("security.protocol", securityProtocol);
 
 		return settings;
 	}
 	
 	protected static Topology buildTopology(Collection<String> inScopeSensors,
-										  double windspeedTreshhold,
+										  double waveTreshhold,
 										  String rawDataTopic,
 										  String kiteableWaveTopic,
 										  SpecificAvroSerde<RawDataMeasured> rawDataMeasuredSerde,
@@ -111,28 +116,29 @@ public class KiteableWaveStream extends Thread {
 										  SpecificAvroSerde<UnkiteableWaveDetected> unkiteableWaveDetectedSerde,
 										  Properties streamProperties
 	){
+
 		StreamsBuilder builder = new StreamsBuilder();
-		
+
 		builder.addStateStore(
-		Stores.keyValueStoreBuilder(
-		Stores.persistentKeyValueStore(kvStoreName),
-		Serdes.String(),
-		rawDataMeasuredSerde)
+			Stores.keyValueStoreBuilder(
+				Stores.persistentKeyValueStore(kvStoreName),
+				Serdes.String(),
+				rawDataMeasuredSerde)
 		);
 			
 		builder.stream(rawDataTopic, Consumed.with(Serdes.String(), rawDataMeasuredSerde))
 			.filter(onlyInScopeSensors(inScopeSensors))
-			.process(() -> new KiteableWaveProcessor(kvStoreName, threshold), kvStoreName)
+			.process(() -> new KiteableWaveProcessor(kvStoreName, waveTreshhold), kvStoreName)
 			.split()
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > threshold,
+			.branch((key, value) -> Double.parseDouble(value.getWaarde()) > waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new KiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k,v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+							.peek((k,v) -> {System.out.printf("🌊 There is a kiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), kiteableWaveDetectedSerde))))
-			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= threshold,
+			.branch((key, value) -> Double.parseDouble(value.getWaarde()) <= waveTreshhold,
 					Branched.withConsumer(s -> s
 							.mapValues(v -> new UnkiteableWaveDetected(v.getSensorID(), v.getLocatie(), v.getWaarde(), v.getEenheid(), v.getTijdstip()))
-							.peek((k, v) -> {logger.info(String.format("ℹ️ Sensor: %s: %s", k, v));})
+							.peek((k, v) -> {System.out.printf("🌊 There is an unkiteable wave detected: %s%n", v.getWaarde());})
 							.to(kiteableWaveTopic, Produced.with(Serdes.String(), unkiteableWaveDetectedSerde))));
 		
 			
@@ -142,4 +148,5 @@ public class KiteableWaveStream extends Thread {
 	private static Predicate<String, RawDataMeasured> onlyInScopeSensors(Collection<String> inScopeSensors) {
 		return (key_maybe, v) -> Optional.ofNullable(key_maybe).map(inScopeSensors::contains).orElse(false);
 	}
+
 }

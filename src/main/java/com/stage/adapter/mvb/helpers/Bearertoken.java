@@ -7,11 +7,13 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import org.json.JSONObject;
 
 public class Bearertoken {
-	public static String getBearerToken(String api) {		
+	
+	public static String getBearerToken(String api, String username, String password) {		
 		try {
 			URL url = new URL(String.format("%s/token", api));
 			
@@ -22,7 +24,7 @@ public class Bearertoken {
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("User-Agent", "Java client");
             
-            String body = String.format("grant_type=password&username=%s&password=%s", System.getenv("USERNAME"), System.getenv("PASSWORD"));
+            String body = String.format("grant_type=password&username=%s&password=%s", username, password);
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
             con.setDoOutput(true);
@@ -30,10 +32,9 @@ public class Bearertoken {
             try(OutputStream os = con.getOutputStream()) {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);			
+            } catch(UnknownHostException e) {
+            	throw new RuntimeException("Invalid URL: " + url, e);
             }
-            
-//            int responseCode = con.getResponseCode();
-//            System.out.printf("Responsecode: %d%n", responseCode);
             
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputline;
@@ -46,7 +47,6 @@ public class Bearertoken {
             
             JSONObject responseJson = new JSONObject(response.toString());
             String access_token = responseJson.getString("access_token");
-//            System.out.println("Access token retrieved");
             return access_token;
 			
 		} catch (MalformedURLException e) {

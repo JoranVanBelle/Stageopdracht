@@ -34,7 +34,6 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
 	public void process(Record<String, RawDataMeasured> record) {
 		double lowerBound = thresholds.get(record.key())[0];
 		double upperBound = thresholds.get(record.key())[1];
-		
 		var mostRecentEvent = stateStore.get(record.key());
 		
 		if(mostRecentEvent == null) {
@@ -51,6 +50,10 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
         	var output = new Record<>(record.key(), firstValue, record.timestamp(), record.headers());
         	context.forward(output);
         	return;
+		}
+
+		if(isRecordFirstRecordInStateStore(mostRecentEvent, record)) {
+			return;
 		}
 		
 		if(isValueBetweenUpperAndLowerBoundAndLastNotBetweenUpperAndLower(mostRecentEvent, record, upperBound, lowerBound)) {
@@ -91,7 +94,11 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
     public void close() {
 
     }
-    
+
+	private static boolean isRecordFirstRecordInStateStore(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record) {
+		return mostRecentEvent.getTijdstip() == record.value().getTijdstip();
+	}
+
     private static boolean isValueBetweenUpperAndLowerBoundAndLastNotBetweenUpperAndLower(RawDataMeasured mostRecentEvent, Record<String, RawDataMeasured> record, double upper, double lower) {
     	double lastValue = Double.parseDouble(mostRecentEvent.getWaarde());
     	double newValue = Double.parseDouble(record.value().getWaarde());
@@ -105,5 +112,4 @@ public class KiteableWindDirectionProcessor implements Processor<String, RawData
     	
     	return (newValue < lower || newValue > upper) && (lastValue >= lower && lastValue <= upper);
     }
-	
 }

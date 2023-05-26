@@ -20,12 +20,16 @@ public class Catalog extends Thread {
 
 	private static final int FETCH_API = 1000 * 60 * 60 * 168;	// ms * s * min * h - 1x in de 7d
 	private final String api;
+	private final String username;
+	private final String password;
 	private String catalog;
 
 	private static final Logger logger = LogManager.getLogger(Catalog.class);
 	
-	public Catalog(String api) {
+	public Catalog(String api, String username, String password) {
 		this.api = api;
+		this.username = username;
+		this.password = password;
 	}
 	
 	public String getCatalogString() {
@@ -44,8 +48,8 @@ public class Catalog extends Thread {
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			String token = Bearertoken.getBearerToken(this.api);
-			String response = fetchApi(String.format("%s/V2/catalog", this.api), token);
+			String token = Bearertoken.getBearerToken(api, username, password);
+			String response = fetchApi(String.format("%s/V2/catalog", api), token);
 			logger.info("ℹ️ Catalog retrieved");
 			setCatalog(response);
 			

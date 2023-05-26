@@ -18,13 +18,17 @@ import com.stage.adapter.mvb.helpers.Bearertoken;
 
 public class CurrentData extends Thread {
 
-	private static final int FETCH_API = 1000 * 60 * 60 * 1;	// ms * s * min * h
+	private static final int FETCH_API = 60;
 	private final String api;
+	private final String username;
+	private final String password;
 	private String currentData;
 	private static final Logger logger = LogManager.getLogger(CurrentData.class);
 	
-	public CurrentData(String api) {
+	public CurrentData(String api, String username, String password) {
 		this.api = api;
+		this.username = username;
+		this.password = password;
 	}
 	
 	public String getCurrentDataString() {
@@ -43,12 +47,12 @@ public class CurrentData extends Thread {
 	public void run() {
 		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 		scheduler.scheduleAtFixedRate(() -> {
-			String token = Bearertoken.getBearerToken(this.api);
-			String response = fetchApi(String.format("%s/V2/currentData", this.api), token);
-			logger.info("ℹ️ Current data retrieved");
+			String token = Bearertoken.getBearerToken(api, username, password);
+			String response = fetchApi(String.format("%s/V2/currentData", api), token);
+			System.out.println("ℹ️ Current data retrieved");
 			setCurrentData(response);
-			
-		}, 0, FETCH_API, TimeUnit.MILLISECONDS);
+
+		}, 0, FETCH_API, TimeUnit.MINUTES);
 	}
 	
 	private String fetchApi(String api, String token) {
