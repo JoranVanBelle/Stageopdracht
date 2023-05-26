@@ -18,7 +18,7 @@ import com.stage.adapter.mvb.helpers.Bearertoken;
 
 public class CurrentData extends Thread {
 
-	private static final int FETCH_API = 5;	// ms * s * min * h
+	private static final int FETCH_API = 60;
 	private final String api;
 	private final String username;
 	private final String password;
@@ -52,7 +52,7 @@ public class CurrentData extends Thread {
 			System.out.println("ℹ️ Current data retrieved");
 			setCurrentData(response);
 
-		}, 0, FETCH_API, TimeUnit.SECONDS);
+		}, 0, FETCH_API, TimeUnit.MINUTES);
 	}
 	
 	private String fetchApi(String api, String token) {

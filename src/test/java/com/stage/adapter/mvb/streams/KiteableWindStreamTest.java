@@ -77,10 +77,9 @@ public class KiteableWindStreamTest extends KafkaTopologyTestBase {
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "2.00", "m/s", 8L));
         rawMeasurements.pipeInput("S1", new RawDataMeasured("S1", "Twoasten", "1.00", "m/s", 9L));
 
-        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(schema_registry).deserializer()).readKeyValue();
+        var windDetectionsList = testDriver.createOutputTopic(KITABLE_WIND_DETECTED_TOPIC, new StringDeserializer(), KiteableWindStream.windHasFallenOffSerde(schema_registry).deserializer()).readRecordsToList();
 
-//        Assertions.assertEquals(2, windDetectionsList.size());
-        System.err.println(windDetectionsList);
+        Assertions.assertEquals(2, windDetectionsList.size());
 
     }
     

@@ -26,7 +26,7 @@ public class RawDataInfrastructure {
 	public void produce(RawDataMeasured rawDataMeasured) {
 		
 		final ProducerRecord<String, RawDataMeasured> record = new ProducerRecord<String, RawDataMeasured>(TOPIC, rawDataMeasured.getSensorID(), rawDataMeasured);
-
+		
 		producer.send(record);
 		producer.flush();
 }

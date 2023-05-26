@@ -21,11 +21,12 @@ public class EmailInfrastructure {
 
 	public EmailInfrastructure(String host, int port, String username, String password) {
 		prop = new Properties();
-		prop.put("mail.smtp.auth", true);
+
+
+		prop.put("mail.smtp.auth", "true");
 		prop.put("mail.smtp.starttls.enable", "true");
 		prop.put("mail.smtp.host", host);
 		prop.put("mail.smtp.port", port);
-		prop.put("mail.smtp.ssl.trust", host);
 
 		this.username = username;
 		this.password = password;
